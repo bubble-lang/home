@@ -1,202 +1,209 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bubble Language REPL</title>
     <style>
-        :root {
-            --base: #faf4ed;
-            --surface: #fffaf3;
-            --overlay: #f2e9e1;
-            --muted: #9893a5;
-            --subtle: #797593;
-            --text: #575279;
-            --love: #b4637a;
-            --gold: #ea9d34;
-            --rose: #d7827e;
-            --pine: #286983;
-            --foam: #56949f;
-            --iris: #907aa9;
-            --highlight-low: #f4ede8;
-            --highlight-med: #dfdad9;
-            --highlight-high: #cecacd;
-        }
-        body {
-            font-family: 'Courier New', monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: var(--base);
-            color: var(--text);
-        }
-        h1 {
-            color: var(--rose);
-            text-align: center;
-        }
-        #console {
-            height: 300px;
-            overflow-y: auto;
-            border: 1px solid var(--muted);
-            padding: 10px;
-            margin-bottom: 10px;
-            white-space: pre-wrap;
-            background-color: var(--surface);
-        }
-        #inputArea {
-            display: flex;
-            gap: 10px;
-        }
-        #input {
-            flex-grow: 1;
-            padding: 5px;
-            background-color: var(--surface);
-            color: var(--text);
-            border: 1px solid var(--muted);
-        }
-        #customDialog {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: var(--surface);
-            padding: 20px;
-            border: 1px solid var(--muted);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-        #dialogInput {
-            width: 100%;
-            margin-bottom: 10px;
-            padding: 5px;
-            border: 1px solid var(--muted);
-        }
-        #dialogSubmit {
-            background-color: var(--foam);
-            color: var(--base);
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        #dialogSubmit:hover {
-            background-color: var(--pine);
-        }
-        #runButton {
-            background-color: var(--foam);
-            color: var(--base);
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        #runButton:hover {
-            background-color: var(--pine);
-        }
+      :root {
+        --base: #faf4ed;
+        --surface: #fffaf3;
+        --overlay: #f2e9e1;
+        --muted: #9893a5;
+        --subtle: #797593;
+        --text: #575279;
+        --love: #b4637a;
+        --gold: #ea9d34;
+        --rose: #d7827e;
+        --pine: #286983;
+        --foam: #56949f;
+        --iris: #907aa9;
+        --highlight-low: #f4ede8;
+        --highlight-med: #dfdad9;
+        --highlight-high: #cecacd;
+      }
+      body {
+        font-family: "Courier New", monospace;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--base);
+        color: var(--text);
+      }
+      h1 {
+        color: var(--rose);
+        text-align: center;
+      }
+      #console {
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--muted);
+        padding: 10px;
+        margin-bottom: 10px;
+        white-space: pre-wrap;
+        background-color: var(--surface);
+      }
+      #inputArea {
+        display: flex;
+        gap: 10px;
+      }
+      #input {
+        flex-grow: 1;
+        padding: 5px;
+        background-color: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--muted);
+      }
+      #customDialog {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: var(--surface);
+        padding: 20px;
+        border: 1px solid var(--muted);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+      #dialogInput {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid var(--muted);
+      }
+      #dialogSubmit {
+        background-color: var(--foam);
+        color: var(--base);
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+      #dialogSubmit:hover {
+        background-color: var(--pine);
+      }
+      #runButton {
+        background-color: var(--foam);
+        color: var(--base);
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      #runButton:hover {
+        background-color: var(--pine);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Bubble Language REPL</h1>
     <div id="console"></div>
     <div id="inputArea">
-        <textarea id="input" rows="3" placeholder="Enter Bubble code here"></textarea>
+      <textarea
+        id="input"
+        rows="3"
+        placeholder="Enter Bubble code here"
+      ></textarea>
     </div>
     <button id="runButton">Run</button>
 
     <div id="customDialog">
-        <p id="dialogPrompt"></p>
-        <input type="text" id="dialogInput">
-        <button id="dialogSubmit">Submit</button>
+      <p id="dialogPrompt"></p>
+      <input type="text" id="dialogInput" />
+      <button id="dialogSubmit">Submit</button>
     </div>
 
-    <script src="./public/wasm_exec.js"></script>
+    <script src="./wasm_exec.js"></script>
     <script>
-        let bubbleInterpreter;
-        const consoleElement = document.getElementById('console');
-        const inputElement = document.getElementById('input');
-        const runButton = document.getElementById('runButton');
-        const customDialog = document.getElementById('customDialog');
-        const dialogPrompt = document.getElementById('dialogPrompt');
-        const dialogInput = document.getElementById('dialogInput');
-        const dialogSubmit = document.getElementById('dialogSubmit');
+      let bubbleInterpreter;
+      const consoleElement = document.getElementById("console");
+      const inputElement = document.getElementById("input");
+      const runButton = document.getElementById("runButton");
+      const customDialog = document.getElementById("customDialog");
+      const dialogPrompt = document.getElementById("dialogPrompt");
+      const dialogInput = document.getElementById("dialogInput");
+      const dialogSubmit = document.getElementById("dialogSubmit");
 
-        function appendToConsole(text, isInput) {
-            const line = document.createElement('div');
-            line.textContent = isInput ? '> ' + text : text;
-            consoleElement.appendChild(line);
-            consoleElement.scrollTop = consoleElement.scrollHeight;
-        }
+      function appendToConsole(text, isInput) {
+        const line = document.createElement("div");
+        line.textContent = isInput ? "> " + text : text;
+        consoleElement.appendChild(line);
+        consoleElement.scrollTop = consoleElement.scrollHeight;
+      }
 
-        function handleOutput(text) {
-            appendToConsole(text, false);
-        }
+      function handleOutput(text) {
+        appendToConsole(text, false);
+      }
 
-        function showCustomDialog(prompt) {
-            return new Promise((resolve) => {
-                dialogPrompt.textContent = prompt;
-                customDialog.style.display = 'block';
-                dialogInput.focus();
+      function showCustomDialog(prompt) {
+        return new Promise((resolve) => {
+          dialogPrompt.textContent = prompt;
+          customDialog.style.display = "block";
+          dialogInput.focus();
 
-                function submitHandler() {
-                    const value = dialogInput.value;
-                    customDialog.style.display = 'none';
-                    dialogInput.value = '';
-                    dialogSubmit.removeEventListener('click', submitHandler);
-                    resolve(value);
-                }
+          function submitHandler() {
+            const value = dialogInput.value;
+            customDialog.style.display = "none";
+            dialogInput.value = "";
+            dialogSubmit.removeEventListener("click", submitHandler);
+            resolve(value);
+          }
 
-                dialogSubmit.addEventListener('click', submitHandler);
-            });
-        }
+          dialogSubmit.addEventListener("click", submitHandler);
+        });
+      }
 
-        // Initialize WebAssembly
-        const go = new Go();
-        WebAssembly.instantiateStreaming(fetch("./public/bubble.wasm"), go.importObject)
-            .then((result) => {
-                go.run(result.instance);
-                bubbleInterpreter = globalThis.bubbleREPL;
-                bubbleInterpreter.setOutputCallback(handleOutput);
-                appendToConsole("Bubble REPL initialized. Enter your code and click 'Run' to execute.", false);
-            })
-            .catch(error => {
-                appendToConsole("Error initializing Bubble REPL: " + error, false);
-            });
-
-        async function runCode() {
-            const code = inputElement.value.trim();
-            if (code) {
-                appendToConsole(code, true);
-                try {
-                    const result = await bubbleInterpreter.runBubble(code);
-                    if (result !== undefined && result !== null) {
-                        if (result.startsWith("Enter")) {
-                            const userInput = await showCustomDialog(result);
-                            await bubbleInterpreter.runBubble(userInput);
-                        } else {
-                            appendToConsole(result, false);
-                        }
-                    }
-                } catch (error) {
-                    appendToConsole("Error: " + error, false);
-                }
-                inputElement.value = '';
-            }
-        }
-
-        runButton.addEventListener('click', runCode);
-
-        inputElement.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                runCode();
-            }
+      // Initialize WebAssembly
+      const go = new Go();
+      WebAssembly.instantiateStreaming(fetch("./bubble.wasm"), go.importObject)
+        .then((result) => {
+          go.run(result.instance);
+          bubbleInterpreter = globalThis.bubbleREPL;
+          bubbleInterpreter.setOutputCallback(handleOutput);
+          appendToConsole(
+            "Bubble REPL initialized. Enter your code and click 'Run' to execute.",
+            false,
+          );
+        })
+        .catch((error) => {
+          appendToConsole("Error initializing Bubble REPL: " + error, false);
         });
 
-        // Override console.log to keep debug messages in the browser console
-        const originalConsoleLog = console.log;
-        console.log = function() {
-            originalConsoleLog.apply(console, arguments);
-        };
+      async function runCode() {
+        const code = inputElement.value.trim();
+        if (code) {
+          appendToConsole(code, true);
+          try {
+            const result = await bubbleInterpreter.runBubble(code);
+            if (result !== undefined && result !== null) {
+              if (result.startsWith("Enter")) {
+                const userInput = await showCustomDialog(result);
+                await bubbleInterpreter.runBubble(userInput);
+              } else {
+                appendToConsole(result, false);
+              }
+            }
+          } catch (error) {
+            appendToConsole("Error: " + error, false);
+          }
+          inputElement.value = "";
+        }
+      }
+
+      runButton.addEventListener("click", runCode);
+
+      inputElement.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          runCode();
+        }
+      });
+
+      // Override console.log to keep debug messages in the browser console
+      const originalConsoleLog = console.log;
+      console.log = function () {
+        originalConsoleLog.apply(console, arguments);
+      };
     </script>
-</body>
+  </body>
 </html>

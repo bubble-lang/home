@@ -151,7 +151,7 @@ say "Thanks for playing, " + name + "!"`;
   async function loadAndRunBubbleREPL() {
     try {
       updateProgress(10, "Fetching WASM executor...");
-      const response = await fetch("/public/wasm_exec.js");
+      const response = await fetch("/wasm_exec.js");
       if (!response.ok) {
         throw new Error(`Failed to fetch WASM executor: ${response.status} ${response.statusText}`);
       }
@@ -165,7 +165,7 @@ say "Thanks for playing, " + name + "!"`;
       updateProgress(50, "Fetching Bubble REPL WASM...");
       const go = new Go();
       const result = await WebAssembly.instantiateStreaming(
-        fetch("/public/bubble.wasm"),
+        fetch("/bubble.wasm"),
         go.importObject
       );
       console.log("Bubble REPL WASM fetched and instantiated successfully");

@@ -54,14 +54,14 @@ say "Thanks for playing, " + name + "!"</textarea
       <button onclick="submitInput()">Submit</button>
     </div>
 
-    <script src="./public/wasm_exec.js"></script>
+    <script src="./wasm_exec.js"></script>
     <script>
       const go = new Go();
       let bubbleREPL;
       let inputResolve = null;
 
       WebAssembly.instantiateStreaming(
-        fetch("./public/bubble.wasm"),
+        fetch("./bubble.wasm"),
         go.importObject,
       ).then((result) => {
         go.run(result.instance);
