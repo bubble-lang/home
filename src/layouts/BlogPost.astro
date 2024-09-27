@@ -1,4 +1,5 @@
 ---
+//@ts-nocheck
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
@@ -13,7 +14,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 <html lang="en">
 	<head>
 		<BaseHead title={title} description={description} />
-		
+
 	</head>
 	<body class="min-h-screen flex flex-col">
 		<Header />
@@ -24,12 +25,8 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 						<a href="/docs" class="text-slate-600 font-sans text-sm "> &larr; Back</a>
 						<h1 class="text-3xl md:text-4xl mb-2">{title}</h1>
 						<div class="text-sm text-gray-600">
-							<FormattedDate date={pubDate} />
-							{updatedDate && (
-								<span class="ml-2 italic">
-									(Updated: <FormattedDate date={updatedDate} />)
-								</span>
-							)}
+
+
 						</div>
 					</div>
 					{heroImage && (

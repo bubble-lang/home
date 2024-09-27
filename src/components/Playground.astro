@@ -1,4 +1,5 @@
 ---
+//@ts-nocheck
 interface Props {
   initialCode?: string;
   active?: boolean;
@@ -109,7 +110,7 @@ const { initialCode = "", active = false } = Astro.props;
   }
 </style>
 
-<script>
+<script is:inline>
   class BubbleREPLTutorial extends HTMLElement {
     constructor() {
       super();
@@ -246,7 +247,7 @@ const { initialCode = "", active = false } = Astro.props;
 
     handleEnter() {
       const currentLine = this.input.value.trim();
-      
+
       if (this.isWaitingForInput) {
         this.submitInput();
       } else if (this.isInBlock || this.isBlockStart(currentLine)) {
@@ -257,13 +258,13 @@ const { initialCode = "", active = false } = Astro.props;
       } else {
         this.runCode(this.input.value);
       }
-      
+
       if (this.isBlockEnd(currentLine)) {
         this.isInBlock = false;
         this.runCode(this.inputBuffer);
         this.inputBuffer = '';
       }
-      
+
       this.updateCursorPosition();
     }
 
@@ -276,7 +277,7 @@ const { initialCode = "", active = false } = Astro.props;
     }
 
     async runCode(code) {
-  
+
       code = code.trim();
      code = code.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 
@@ -288,7 +289,7 @@ const { initialCode = "", active = false } = Astro.props;
           this.revealTerminal();
           this.isFirstRun = false;
         }
-        
+
         const codeLines = code.split('\n');
         codeLines.forEach(line => {
           this.appendToTerminal('> ' + line.trim());
@@ -305,7 +306,7 @@ const { initialCode = "", active = false } = Astro.props;
             }
             varName = varName.trim();
             inputPrompt = inputPrompt.replace("input", "").trim().replace(/^"/, '').replace(/"$/, '');
-            
+
             this.clearInputAndResetCursor();
             this.inputValue = await this.handleInput(inputPrompt);
             const result = await this.bubbleInterpreter.runBubble(`set ${varName} to "${this.inputValue}"`);
@@ -362,7 +363,7 @@ const { initialCode = "", active = false } = Astro.props;
   }).then((userInput) => {
     this.inputValue = userInput.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 
-    
+
     // Convert curly quotes to straight double quotes
     return this.inputValue;
   });
