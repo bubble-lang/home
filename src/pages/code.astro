@@ -1,0 +1,38 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import Main from '../components/Main.astro';
+import Playground from '../components/Playground.astro';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+<Main>
+<section class="flex flex-col items-center">
+
+
+</div>
+
+	</p>
+			<Playground initialCode='say "hello world"'/>
+
+			<div class="flex gap-4">
+
+			<a href="/docs" class="rounded-md  block border text-black p-2 my-8">Learn more</a>
+			<a href="/docs" class="rounded-md block text-black border p-2 my-8">See Examples </a>
+
+
+			</div>
+</section>
+
+	</Main>
+		<Footer />
+	</body>
+</html>

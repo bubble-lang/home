@@ -1,0 +1,96 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+import { getCollection } from 'astro:content';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+const posts = (await getCollection('docs')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		</head>
+	<body class="">
+		<Header />
+		<div class="container mx-auto max-w-4xl px-2 py-24">
+			<div class="flex flex-col md:flex-row gap-4 relative">
+				<!-- Main content -->
+				<main class="w-full ">
+					<!-- Search bar -->
+					<div class="text-center">
+						<p class="text-4xl ">	Learn how to code with bubble.</p>
+						<p> If you are new, read <a href="/docs/getting-started">Getting Started with Bubble </a> </p>
+					</div>
+					<div class="mb-4 mx-auto border-b pb-4">
+						<input
+							type="text"
+							id="search"
+							placeholder="Search ..."
+							class="w-full block mx-auto md:max-w-[400px] px-2 py-1 text-sm rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+						/>
+					</div>
+
+					<!-- Bento grid -->
+					<div id="bento-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+						{posts.map((post, index) => (
+							<div class={`bg-white rounded shadow overflow-hidden ${index === 0 ? 'col-span-2 lg:col-span-3' : ''}`}>
+								<a href={`/docs/${post.slug}/`} class="block h-36 md:h-48 flex flex-col hover:bg-slate-100  ">
+									<div class="flex-grow relative">
+										<img src={post.data.heroImage} class="w-full h-full object-cover absolute inset-0"/>
+									</div>
+									<div class="px-4 py-0 ">
+										<span class="font-serif tracking-tightest text-slate-800 text-[18px]">{post.data.title} &rarr;</span>
+									</div>
+								</a>
+							</div>
+						))}
+					</div>
+				</main>
+			</div>
+		</div>
+		<Footer />
+
+
+		<script>
+			const searchInput = document.getElementById('search');
+			const bentoGrid = document.getElementById('bento-grid');
+			const posts = Array.from(bentoGrid.children);
+			const sidebarToggle = document.getElementById('sidebar-toggle');
+			const sidebar = document.getElementById('sidebar');
+
+			// Search functionality
+			searchInput.addEventListener('input', function(e) {
+				const searchTerm = e.target.value.toLowerCase();
+				posts.forEach(post => {
+					const title = post.querySelector('h3').textContent.toLowerCase();
+					if (title.includes(searchTerm)) {
+						post.style.display = '';
+					} else {
+						post.style.display = 'none';
+					}
+				});
+			});
+
+			// Sidebar toggle functionality
+			sidebarToggle.addEventListener('click', function() {
+				sidebar.classList.toggle('-translate-x-full');
+			});
+
+			// Close sidebar when clicking outside on mobile
+			document.addEventListener('click', function(event) {
+				const isClickInsideSidebar = sidebar.contains(event.target);
+				const isClickOnToggle = sidebarToggle.contains(event.target);
+				if (!isClickInsideSidebar && !isClickOnToggle && window.innerWidth < 768) {
+					sidebar.classList.add('-translate-x-full');
+				}
+			});
+		</script>
+	</body>
+</html>
+

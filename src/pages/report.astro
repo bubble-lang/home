@@ -1,0 +1,61 @@
+---
+import { getEntry } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+const entry = await getEntry('report', '01');
+const { Content } = await entry.render();
+
+// You can use the frontmatter data from your MDX file
+const { title, author } = entry.data;
+---
+
+<Layout title={title} description={`Report by ${author}`}>
+  <h1 class="text-2xl font-normal">{title}</h1>
+  <p>{author}</p>
+  <Content />
+
+  <div id="progress-container" class="fixed bottom-5 right-5 w-96 bg-gray-100 rounded-lg shadow-md px-2 flex flex-col">
+<div class="flex gap-4 items-center">
+    <div class="relative h-2 w-1/2 bg-gray-200 rounded-full overflow-hidden">
+        <div id="progress-bar" class="absolute top-0 left-0 h-full bg-orange-400 rounded-full transition-all duration-300 ease-in-out"></div>
+      </div>
+      <p id="word-count" class="text-center text-sm font-medium text-gray-600 mt-2"></p>
+  </div>   
+</div>
+
+  <script is:inline>
+    function countWords() {
+      const text = document.body.innerText || document.body.textContent;
+      const words = text.trim().split(/\s+/);
+      return words.length;
+    }
+
+    function updateProgressBar() {
+      const totalWords = countWords();
+      const targetWords = 7000;
+      const remainingWords = Math.max(0, targetWords - totalWords);
+      const percentage = Math.min(100, (totalWords / targetWords) * 100);
+
+      const progressBar = document.getElementById('progress-bar');
+      const wordCount = document.getElementById('word-count');
+
+      progressBar.style.width = percentage + '%';
+      wordCount.textContent = `${remainingWords.toLocaleString()} words remaining`;
+
+      if (totalWords >= targetWords) {
+        progressBar.classList.remove('bg-orange-400');
+        progressBar.classList.add('bg-green-500');
+      } else {
+        progressBar.classList.remove('bg-green-500');
+        progressBar.classList.add('bg-orange-400');
+      }
+    }
+
+    // Update progress bar on page load
+    updateProgressBar();
+
+    // Update progress bar when content changes (e.g., if you have dynamic content)
+    const observer = new MutationObserver(updateProgressBar);
+    observer.observe(document.body, { childList: true, subtree: true });
+  </script>
+</Layout>

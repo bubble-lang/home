@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM REPL Console</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #console {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+        }
+        #input-form {
+            display: flex;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #input {
+            flex-grow: 1;
+            padding: 5px;
+            font-size: 16px;
+            min-height: 20px;
+            outline: none;
+        }
+        #run-button {
+            padding: 5px 10px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #run-button:hover {
+            background-color: #45a049;
+        }
+        .input-line {
+            color: blue;
+        }
+        .output-line {
+            color: black;
+        }
+        #loading {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        #progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 4px;
+        }
+        #progress {
+            width: 0%;
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <h1>WASM REPL Console</h1>
+    <div id="loading">
+        <p>Loading WASM REPL... <span id="progress-text">0%</span></p>
+        <div id="progress-bar">
+            <div id="progress"></div>
+        </div>
+    </div>
+    <div id="console"></div>
+    <form id="input-form">
+        <div id="input" contenteditable="true" placeholder="Enter Bubble code..."></div>
+        <button type="submit" id="run-button">Run</button>
+    </form>
+
+    <script>
+        let bubbleREPL;
+        let waitingForInput = false;
+        let resolveInput;
+
+        const consoleElement = document.getElementById('console');
+        const inputElement = document.getElementById('input');
+        const runButton = document.getElementById('run-button');
+        const loadingElement = document.getElementById('loading');
+        const progressElement = document.getElementById('progress');
+        const progressTextElement = document.getElementById('progress-text');
+
+        async function loadWasmRepl() {
+            try {
+                updateProgress(10, "Fetching WASM executor...");
+                const response = await fetch("/public/wasm_exec.js");
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch WASM executor: ${response.status} ${response.statusText}`);
+                }
+                const wasmExecScript = await response.text();
+
+                updateProgress(30, "Evaluating WASM executor...");
+                eval(wasmExecScript);
+
+                updateProgress(50, "Fetching Bubble REPL WASM...");
+                const go = new Go();
+                const result = await WebAssembly.instantiateStreaming(
+                    fetch("/public/bubble.wasm"),
+                    go.importObject
+                );
+
+                updateProgress(70, "Initializing Bubble REPL...");
+                go.run(result.instance);
+                bubbleREPL = globalThis.bubbleREPL;
+                if (!bubbleREPL) {
+                    throw new Error("bubbleREPL not found in global scope");
+                }
+
+                updateProgress(100, "REPL Ready!");
+                setTimeout(() => {
+                    loadingElement.style.display = "none";
+                }, 500);
+
+                bubbleREPL.setOutputCallback(handleOutput);
+                bubbleREPL.setInputCallback(handleInput);
+
+            } catch (error) {
+                console.error("Error loading Bubble REPL:", error);
+                loadingElement.innerHTML = `<p style="color: red;">Failed to load Bubble REPL: ${error.message}</p>`;
+            }
+        }
+
+        function updateProgress(percentage, message) {
+            progressElement.style.width = `${percentage}%`;
+            progressTextElement.textContent = `${percentage}%`;
+            loadingElement.querySelector("p").textContent = message;
+        }
+
+        function handleOutput(text) {
+            console.log("REPL Output:", text);
+            text = text.trim();
+            if (text !== "") {
+                const outputLine = document.createElement("div");
+                outputLine.textContent = text;
+                outputLine.className = "output-line";
+                consoleElement.appendChild(outputLine);
+                consoleElement.scrollTop = consoleElement.scrollHeight;
+            }
+        }
+
+        function handleInput(message) {
+            return new Promise((resolve) => {
+                waitingForInput = true;
+                resolveInput = resolve;
+                inputElement.setAttribute('placeholder', message || "Enter input...");
+                const inputPrompt = document.createElement("div");
+                inputPrompt.textContent = message;
+                inputPrompt.className = "input-line";
+                consoleElement.appendChild(inputPrompt);
+                consoleElement.scrollTop = consoleElement.scrollHeight;
+            });
+        }
+
+        function runProgram() {
+            if (!bubbleREPL) {
+                console.error("WASM not loaded yet");
+                return;
+            }
+            let input = inputElement.textContent.trim();
+            
+            console.log("Raw input:", input);
+
+            inputElement.textContent = '';
+            const inputLine = document.createElement("div");
+            inputLine.textContent = `> ${input}`;
+            inputLine.className = "input-line";
+            consoleElement.appendChild(inputLine);
+            
+            console.log("Sending to REPL:", input);
+            bubbleREPL.runBubbleProgram(input);
+        }
+
+        function submitInput() {
+            if (waitingForInput) {
+                const input = inputElement.textContent.trim();
+                console.log("Input for prompt:", input);
+                inputElement.textContent = '';
+                const inputLine = document.createElement("div");
+                inputLine.textContent = `< ${input}`;
+                inputLine.className = "input-line";
+                consoleElement.appendChild(inputLine);
+                waitingForInput = false;
+                resolveInput(input);
+            } else {
+                runProgram();
+            }
+        }
+
+        document.getElementById('input-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            submitInput();
+        });
+
+        // Handle Enter key press
+        inputElement.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                submitInput();
+            }
+        });
+
+        loadWasmRepl();
+    </script>
+</body>
+</html>

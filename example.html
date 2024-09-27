@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Bubble Language Interpreter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+        }
+        #output {
+            white-space: pre-wrap;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            min-height: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .input-prompt {
+            color: blue;
+            font-weight: bold;
+        }
+        .user-input {
+            color: green;
+        }
+        #input-area {
+            display: none;
+            margin-top: 10px;
+        }
+        #user-input {
+            width: 70%;
+            padding: 5px;
+        }
+        #submit-input {
+            padding: 5px 10px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Bubble Language Interpreter</h1>
+    <textarea id="code" placeholder="Enter your Bubble code here...">set name to input "What is your name? "
+say "Hello, " + name + "! Let's play a simple guessing game."
+
+set secretNumber to 24
+set attempts to 0
+
+set guess to input "Guess a number: "
+if guess is equal to secretNumber
+    say "Correct! You guessed it!"
+else
+    say "Sorry, that's not correct. The number was " + secretNumber
+end
+
+say "Thanks for playing, " + name + "!"</textarea>
+    <button onclick="runCode()" id="runButton">Run Code</button>
+    <h2>Output:</h2>
+    <div id="output"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Enter your input here">
+        <button id="submit-input">Submit</button>
+    </div>
+
+    <script>
+        let outputBuffer = '';
+        let inputResolver = null;
+        let interpreter = null;
+
+        class BubbleInterpreter {
+    constructor(code) {
+        this.code = code.split('\n');
+        this.currentLine = 0;
+        this.variables = {};
+    }
+
+    async run() {
+        while (this.currentLine < this.code.length) {
+            const line = this.code[this.currentLine].trim();
+            if (line !== '') {
+                try {
+                    await this.executeLine(line);
+                } catch (error) {
+                    throw new Error(`Error on line ${this.currentLine + 1}: ${error.message}\nLine content: ${line}`);
+                }
+            }
+            this.currentLine++;
+        }
+    }
+
+    async executeLine(line) {
+        if (line.startsWith('set ')) {
+            const match = line.match(/set (\w+) to (.+)/);
+            if (!match) throw new Error('Invalid set statement');
+            const [_, varName, value] = match;
+            if (value.startsWith('input ')) {
+                const promptMatch = value.match(/input "(.+)"/);
+                if (!promptMatch) throw new Error('Invalid input statement');
+                const prompt = promptMatch[1];
+                this.variables[varName] = await getInput(prompt);
+            } else {
+                this.variables[varName] = this.evaluateExpression(value);
+            }
+        } else if (line.startsWith('say ')) {
+            const match = line.match(/say (.+)/);
+            if (!match) throw new Error('Invalid say statement');
+            const message = match[1];
+            appendOutput(this.evaluateExpression(message) + '\n');
+        } else if (line.startsWith('if ')) {
+            await this.executeIfStatement(line);
+        } else if (line.startsWith('while ')) {
+            await this.executeWhileLoop(line);
+        } else if (line === 'else' || line === 'end') {
+            // These are handled in executeIfStatement and executeWhileLoop, so we just skip them here
+        } else {
+            throw new Error('Unknown command');
+        }
+    }
+
+    async executeIfStatement(line) {
+        const match = line.match(/if (.+)/);
+        if (!match) throw new Error('Invalid if statement');
+        const condition = match[1];
+        const conditionMet = this.evaluateCondition(condition);
+        
+        let inElseBlock = false;
+        this.currentLine++;
+        
+        while (this.currentLine < this.code.length) {
+            const currentLine = this.code[this.currentLine].trim();
+            
+            if (currentLine === 'end') {
+                break;
+            } else if (currentLine === 'else') {
+                inElseBlock = true;
+            } else if ((conditionMet && !inElseBlock) || (!conditionMet && inElseBlock)) {
+                await this.executeLine(currentLine);
+            }
+            
+            this.currentLine++;
+        }
+        
+        if (this.currentLine >= this.code.length) {
+            throw new Error('Unclosed if statement');
+        }
+    }
+
+    async executeWhileLoop(line) {
+        const match = line.match(/while (.+)/);
+        if (!match) throw new Error('Invalid while statement');
+        const condition = match[1];
+        
+        const loopStartLine = this.currentLine + 1;
+        
+        while (this.evaluateCondition(condition)) {
+            this.currentLine = loopStartLine;
+            while (this.currentLine < this.code.length) {
+                const currentLine = this.code[this.currentLine].trim();
+                
+                if (currentLine === 'end') {
+                    break;
+                } else {
+                    await this.executeLine(currentLine);
+                }
+                
+                this.currentLine++;
+            }
+        }
+        
+        if (this.currentLine >= this.code.length) {
+            throw new Error('Unclosed while loop');
+        }
+    }
+
+   
+    evaluateExpression(expr) {
+        const parts = expr.split(/\s*(?:\+|\bplus\b|\-|\bminus\b)\s*/);
+        let result = '';
+        let operator = '+';
+
+        parts.forEach((part, index) => {
+            const trimmed = part.trim();
+            let value;
+
+            if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                value = trimmed.slice(1, -1);
+            } else if (this.variables.hasOwnProperty(trimmed)) {
+                value = this.variables[trimmed];
+            } else {
+                // Check if it's a numeric operation
+                const numericOperation = trimmed.match(/(\w+)\s*([-+*/])\s*(\w+)/);
+                if (numericOperation) {
+                    const [_, left, op, right] = numericOperation;
+                    const leftValue = this.variables.hasOwnProperty(left) ? this.variables[left] : parseFloat(left);
+                    const rightValue = this.variables.hasOwnProperty(right) ? this.variables[right] : parseFloat(right);
+                    switch (op) {
+                        case '+': value = leftValue + rightValue; break;
+                        case '-': value = leftValue - rightValue; break;
+                        case '*': value = leftValue * rightValue; break;
+                        case '/': value = leftValue / rightValue; break;
+                    }
+                } else {
+                    value = trimmed;
+                }
+            }
+
+            if (index === 0) {
+                result = value;
+            } else {
+                if (operator === '+' || operator === 'plus') {
+                    result += value;
+                } else if (operator === '-' || operator === 'minus') {
+                    result -= value;
+                }
+            }
+
+            // Check for the next operator
+            if (index < parts.length - 1) {
+                const nextOperator = expr.match(new RegExp(`${part}\\s*(\\+|plus|-|minus)\\s*`))?.[1];
+                if (nextOperator) {
+                    operator = nextOperator;
+                }
+            }
+        });
+
+        return result;
+    }
+    evaluateCondition(condition) {
+        const comparisonMatch = condition.match(/(\w+)\s+(is equal to|is greater than|is less than)\s+(\w+)/);
+        if (comparisonMatch) {
+            const [_, left, operator, right] = comparisonMatch;
+            const leftValue = this.variables.hasOwnProperty(left) ? this.variables[left] : parseFloat(left);
+            const rightValue = this.variables.hasOwnProperty(right) ? this.variables[right] : parseFloat(right);
+            switch (operator) {
+                case 'is equal to': return leftValue == rightValue;
+                case 'is greater than': return leftValue > rightValue;
+                case 'is less than': return leftValue < rightValue;
+            }
+        }
+        throw new Error('Invalid condition');
+    }
+}
+
+        async function runCode() {
+            try {
+                const code = document.getElementById('code').value;
+                const outputDiv = document.getElementById('output');
+                outputDiv.innerHTML = '';
+                outputBuffer = '';
+
+                appendOutput("Running code...\n");
+                interpreter = new BubbleInterpreter(code);
+                await interpreter.run();
+                appendOutput("Code execution completed.\n");
+            } catch (error) {
+                appendOutput(`<span class="error">${error.message}</span>\n`);
+                console.error(error);
+            }
+        }
+
+        function appendOutput(text) {
+            outputBuffer += text;
+            document.getElementById('output').innerHTML = outputBuffer;
+        }
+
+        async function getInput(prompt) {
+            appendOutput('<span class="input-prompt">' + prompt + '</span>');
+            const userInput = await new Promise(resolve => {
+                inputResolver = resolve;
+                document.getElementById('input-area').style.display = 'block';
+            });
+            appendOutput('<span class="user-input">' + userInput + '</span>\n');
+            document.getElementById('input-area').style.display = 'none';
+            return userInput;
+        }
+
+        document.getElementById('submit-input').addEventListener('click', () => {
+            const inputElement = document.getElementById('user-input');
+            const userInput = inputElement.value;
+            if (inputResolver) {
+                inputResolver(userInput);
+                inputElement.value = '';
+            }
+        });
+
+        // Ensure the script runs after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.getElementById('runButton').addEventListener('click', runCode);
+        });
+    </script>
+</body>
+</html>

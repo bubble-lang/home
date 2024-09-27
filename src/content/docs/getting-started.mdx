@@ -1,0 +1,88 @@
+---
+title: 'Getting Started with Bubble'
+description: 'A beginner-friendly introduction to the Bubble programming language.'
+heroImage: '/blog-placeholder-2.jpg'
+---
+
+import Playground from "../../components/Playground.astro";
+import Game from "../../components/Game.astro";
+
+# Welcome to Bubble
+
+Bubble is a fun, easy-to-learn programming language designed for beginners. Let's dive in and start coding with Bubble!
+
+## Your First line of Bubble Code
+
+In Bubble, you can print something on the screen with the say command. Add the text you want to show by using quotations.
+
+```
+say "Hello, World!"
+```
+
+Run this code and you'll see "Hello, World!" printed to the console. Congratulations, you just wrote your first Bubble program!
+
+<Playground initialCode ={`say "Hello World!"`} />
+
+## Variables
+
+Variables are like places where you can save information. For example, you can save the value of a number to a variable. In bubble, we can use the `set` keyword.
+
+```
+set x to 5
+set y to 3
+```
+
+We can print the values of `x` and `y` using the say command
+
+```
+set x to 5
+set y to 3
+say x
+say y
+```
+
+<Playground initialCode={`say "Hello World!"
+set x to 5`} />
+
+
+
+You can also combine variables and strings using the `plus` operator:
+
+```
+set greeting to "Hello, "
+set name to "Alice"
+say greeting plus name # Output: Hello, Alice
+```
+
+## Conditionals
+
+Bubble supports conditional statements to make decisions in your code. Use `if`, `else`, and `end` keywords to define the structure:
+
+```
+set x to 2
+if x is greater than 5
+  say "x is greater than 5"
+else
+  say "x is not greater than 5"
+end if
+```
+
+## User Input
+
+Getting user input is simple with the `input` function. Here's a little number guessing game:
+
+```
+set name to input "What is your name? "
+say "Hello, " plus name plus "! Let's play a guessing game."
+
+set secretNumber to 7
+set guess to input "Guess a number between 1 and 10: "
+
+if guess is equal to secretNumber
+    say "Correct! You guessed it!"
+else
+    say "Sorry, that's not it. The number was " plus secretNumber
+end if
+
+say "Thanks for playing, " plus name plus "!"
+```

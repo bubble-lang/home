@@ -1,0 +1,411 @@
+---
+title: "Bubble: A New Programming Language for Beginners"
+author: "Joe Chelladurai"
+---
+
+
+import Playground from "../../components/playground.astro";
+
+<Playground initialCode='say "hello world!"' active={false} />
+
+## Abstract 
+In this report, I introduce a new programming language for beginners called Bubble. Bubble is aimed to be simple and easy to learn. It is inspired by HyperTalk, Hedy, and Scratch. Bubble aims to bring the joy of programming to beginners and help climb the command line wall (Appleton).
+
+## Executive Summary
+
+### Background
+
+• Bubble is an interpreter written in Go
+
+• It is a text-based programming language with a REPL
+
+• The syntax will be beginner-friendly and help teach basic concepts of programming
+
+### Problems with current situation
+
+• The transition from block-based (e.g., scratch) to text-based programming (e.g., python)
+can be challenging,
+
+• Syntax statements and error messages may make it difficult to understand for the user.
+
+• Increased frustration may lead to lack of motivation.
+
+### Proposed solution objectives
+
+• Create a new programming language that uses simple keywords and functions
+
+• Implement a lexer and parser to interpret tokens and output code
+
+• Provide easy to understand error messages
+
+• Distribute the program through GitHub and a new website dedicated for the language
+
+
+## Introduction
+
+
+Coding can be one of the most fun aspects of interacting with computers and machines. The
+delight that one can feel, the efficacy that motivates, and the joy of creating things through code is truly a modern-day delight. However, for many people, coding is less appealing and can also be frustrating. Moreover, the necessity of code in many areas of work make programming inevitable as more and more jobs rely on technical abilities. While low-code tools have been useful in bridging the gap between programmers and non-programmers, the ability to code can further help users to develop and create applications.
+
+While there are several programming languages and approaches available, there is an opportunity
+to create programming languages that are easy to use and beginner-friendly. Block-based
+programming such as Scratch make use of visual elements. Text-based programming such as
+python have simple syntax and have a rich ecosystem to build versatile applications. However,
+between these two approaches and levels of abstraction, there is a gap that has a good balance
+between human-like thinking and abstract computer code. Bridging this gap can provide
+opportunities to help users have an enjoyable experience learning to code.
+
+In this project, I propose to create a new programming language called Bubble. This language will be an interpreter written in Go. Its goal is to be an useful programming language that can be used to teach beginners how to code. It is a text-based language that tries to bridge the gap between human language and traditional programming syntax. With helpful error messages and visual and textual feedback, bubble hopes to help the beginner through the stages of coding.
+
+
+### About the Proposed Language: Bubble
+
+• Bubble will be an interpreter written in Go designed for teaching programming to children and beginners.
+
+• It is a text-based programming language. The goal for the language is to be a language that can be used to introduce beginners to text-based programming.
+
+• The language will try to bridge the gap between human language and traditional programming language syntax.
+
+• Additionally, the language will try to minimize user frustration by avoiding common errors such as missing semicolons, or indentations.
+
+### The Need for an Intermediate Language
+
+Block-based programming languages, such as Scratch, have been incredibly successful in
+introducing children to coding concepts. These visual environments allow learners to create
+programs by connecting puzzle-like blocks, making the process intuitive and engaging. However,
+as learners progress, they often face challenges when transitioning to text-based languages.
+Moors, Luxton-Reilly, and Denny (2018) highlight this difficulty in their research, noting that
+"students often struggle with the syntax and structure of text-based languages after becoming
+accustomed to the visual nature of block-based environments" [1]. This transition gap can be
+discouraging for learners and may even lead some to abandon programming altogether.
+While existing programming languages have their strengths, several issues can make them
+challenging for beginners:
+
+### Problems with current programming languages
+
+Common challenges faced by beginners include transitioning from block to text languages,
+learning and memorizing syntax and structure, facing cryptic error messages, and thereby as a
+result, feeling stuck, discouraged, and abandoning programming.
+Syntax rules in many programming languages can be confusing for beginners. For example, the use
+of semicolons, indentation, or brackets can be sources of errors and frustration. Altadmri and
+Brown analyzed several compilations and found that syntax errors were among the most common
+mistakes made by beginners. Errors included confusing assignment with comparison operators,
+unbalanced parentheses, incorrect semi-colons, and wrong separators [2].
+Similarly, error messages in many programming languages can be difficult for beginners to
+understand [3]. This can lead to frustration and discouragement among new learners.
+
+So I thought to myself, can I create a programming language without much punctuation. This was my initial expectation. 
+
+### Proposed Solution: Bubble Programming Language
+
+When I was searching for programming languages that bridged the gap between block-based programming and text-based programming, I noticed a lack of languages. I came across languages
+such as HyperTalk by Apple which followed English grammar syntax. It relied on text to describe in almost pseudocode-like syntax [4].
+Bubble is partly influenced by HyperTalk and maintains some of the simplicity and intuitiveness of block-based languages while introducing text-based approaches that are fundamental to more advanced programming languages.
+
+### Why Go?
+Go is a compiled language that is close to C like language syntax. It is an open source language that is easy to learn. It has a robust standard library and a large ecosystem. It can be easily extendable due to the package ecosystem and community of developers. Go has been used to create rich command line tools and applications. This makes Go a very suitable language for Bubble.
+
+### Key Features of Bubble
+
+Bubble incorporates several key features designed to make it accessible and effective for
+beginners:
+
+1. Text-based syntax: Unlike block-based languages, Bubble uses a text-based syntax, helping
+learners transition to more traditional programming paradigms.
+
+2. Beginner-friendly keywords: The language employs simple, intuitive keywords that are easy
+for novices to understand and remember.
+
+3. REPL (Read-Eval-Print Loop) environment: Bubble includes a REPL, allowing users to input
+commands and see immediate results, facilitating experimentation and learning.
+
+4. Simplified error messages: Error messages in Bubble are designed to be clear and helpful,
+guiding learners towards solutions rather than causing frustration. They will be brief,
+positively toned, constructive, specific, emphasize user control-over system, and
+comprehensible [5].
+
+5. Easy installation and use: The language is designed to be simple to set up and use, reducing
+barriers to entry for new programmers.
+
+## Implementation
+
+### Go
+
+Bubble will build on go. 
+
+The following are the implementation steps.
+
+1. Define keywords and syntax structure
+
+2. Implement a lexer to split input to tokens
+
+3. Create a parser to interpret tokens and generate executable code
+
+4. Create an interpreter to run the program
+
+
+### Keywords & Syntax Structure
+
+Bubble's design philosophy centers around simplicity and clarity.
+
+| keyword | description |
+| ------- | ----------- |
+| set     | assign a variable |
+| print   | print a variable  |
+| if      | conditional logic |
+| else    | conditional logic |
+| end     | complete code block |
+| repeat  | loop  |
+| while   | loop  |
+| ask     | prompt input        |
+
+### Lexer
+
+import lp from "../../components/interactive/tp.jsx";
+
+  <lp 
+       
+        client:load
+      />
+
+
+
+This is an visualiztion of 
+
+import Tokenizer from "../../components/interactive/tokenizer.jsx";
+
+<Tokenizer hideTextBox={true} title="Example" subtitle="plain language is converted to tokens" footnote="this is a react component"
+ client:load defaultCode={`set x to 20
+set y to 30`} />
+
+This is an interactive component. You can type some code and see the tokenizing happen in real time.
+
+<Tokenizer hideTextBox={false} title="Visualize tokens" subtitle="Type some code here. Try `set x to 10`" footnote="this is a react component"
+ client:load defaultCode={`set x to 20
+set y to 30`} />
+
+import Parser from "../../components/interactive/parser.jsx";
+
+ <Parser 
+        title="Bubble Lang Parser Demo"
+        subtitle="Watch how the parser builds an AST"
+        footnote="This is a simplified demonstration of the parsing process."
+        client:load
+      />
+
+### Language Design
+
+Bubble's design philosophy centers around simplicity and clarity. The language will support basic
+concepts including variables, conditionals, loops, and functions, but with a syntax that is more
+intuitive than traditional programming languages.
+
+### Sample Syntax Proposals
+To illustrate how Bubble might look, here are three potential syntax styles:
+Style 1: Natural Language
+create number called age and set it to 25
+if age is greater than 21
+ print "You are an adult"
+else
+ print "You are a minor"
+repeat 5 times
+ print "Hello, World!"
+create function called greet with name
+ print "Hello, " followed by name
+call greet with "Alice"
+Style 2: Pseudocode-like
+var age = 25
+if (age > 21) then
+ print "You are an adult"
+else
+ print "You are a minor"
+loop 5 times
+ print "Hello, World!"
+function greet(name)
+ output "Hello, " + name
+greet("Alice")
+Style 3: Blended Pseudocode and Python-like
+age = 25
+if age > 21:
+ print("You are an adult")
+else:
+ print("You are a minor")
+for i in range(5):
+ print("Hello, World!")
+def greet(name):
+ print("Hello, " + name)
+greet("Alice")
+Table 1: Comparison of block-based and text-based approaches
+Concept Block-based
+(Scratch-like)
+Bubble Text-based (Python-like)
+Variable
+Declaration
+[Set variable
+[name] to [value]]
+create number called age and set it
+to 25
+age = 25
+If Statement [If [condition]
+then [do
+something]]
+if age is greater than 21
+ print "You are an adult"
+else
+ print "You are a minor"
+if age > 21:
+ print("You are an adult")
+else:
+ print("You are a minor")
+Loop [Repeat [number]
+times [do
+something]]
+repeat 5 times
+ print "Hello, World!"
+for i in range(5):
+ print("Hello, World!")
+Function Definition [Define [function
+name]]
+create function called greet with
+name
+print "Hello, "
+followed by name
+def greet(name):
+ print("Hello, " + name)
+Function Call [Call [function
+name] with
+[parameters]]
+call greet with "Alice" greet("Alice")
+List Creation [Set [list name] to
+[item1] [item2]
+[item3]]
+create list called fruits and set it
+to "apple", "banana", "cherry"
+fruits = ["apple", "banana",
+"cherry"]
+Accessing List
+Items
+[Item [number] of
+[list name]]
+get item 2 from fruits fruits[1]
+Mathematical
+Operation
+[[number1] +
+[number2]]
+add 5 and 3 5 + 3
+String
+Concatenation
+[Join [string1]
+[string2]]
+combine "Hello, " and name "Hello, " + name
+User Input [Ask [question] and
+wait]
+ask "What is your name?" and store in
+name
+name = input("What is your
+name?")
+Implementation Plan
+Tools and Technologies
+Bubble will be implemented using the Go programming language. I choose Go for its simplicity and
+strong support in the community. I will use the GoLand IDE, which provides excellent tools for Go
+development.
+Project Phases
+Week: 1 2 3 4 5 6 7 8 9 10 11 12
+Task:
+Initial Planning: ██
+Sprint 1 (Lexer): ██ ██
+Sprint 2 (Parser): ██ ██
+Sprint 3 (Interpreter): ██ ██
+Sprint 4 (REPL): ██ ██
+Final Testing: ██ ██
+Documentation: ██ ██
+Detailed Plan of Work using Agile/Scrum methodology:
+1. Initial Planning and Setup (1 week)
+o Define project scope and objectives
+o Set up development environment
+o Create initial product backlog
+o Conduct initial design research
+o Plan sprint structure and team roles
+2. Sprint 1: Lexer Development (2 weeks)
+o Design and implement basic lexer functionality
+o Conduct user research on syntax preferences
+o Develop unit tests for lexer
+o Sprint review and retrospective
+3. Sprint 2: Parser Development (2 weeks)
+o Design and implement basic parser functionality
+o Integrate parser with lexer
+o Conduct user testing on early syntax prototypes
+o Refine language syntax based on user feedback
+o Develop unit tests for parser
+o Sprint review and retrospective
+4. Sprint 3: Interpreter Development (2 weeks)
+o Design and implement basic interpreter functionality
+o Integrate interpreter with parser
+o Conduct user testing on basic language features
+o Implement core language constructs (variables, loops, conditionals)
+o Develop unit tests for interpreter
+o Sprint review and retrospective
+5. Sprint 4: REPL and Advanced Features (2 weeks)
+o Develop Read-Eval-Print Loop (REPL) interface
+o Implement advanced language features (functions, error handling)
+o Conduct user testing on REPL and advanced features
+o Refine language based on user feedback
+o Develop integration tests
+o Sprint review and retrospective
+6. Final Testing and Refinement (2 weeks)
+o Conduct comprehensive system testing
+o Perform user acceptance testing
+o Address any remaining bugs or issues
+o Optimize performance
+o Final user testing and feedback collection
+7. Documentation and Release Preparation (1 week)
+o Write user documentation and tutorials
+o Prepare release notes
+o Set up distribution channels (website, GitHub)
+o Plan for post-release support and community engagement
+Risks and Mitigation Strategies
+There are risks in developing programming languages for general wider-use. Some risks include:
+1. Risk of deprecation: I hope to add short-term to medium-term support for maintenance
+and documentation. To extend to long-term support, I hope to gather community support
+and contributions.
+2. Support for multiple operating systems: Go has good build tooling that can be utilized to
+deliver multi-platform support.
+3. User adoption: There is a chance that Bubble will not have enough user adoption and there
+is also a chance that there might be too much adoption. To handle high volumes, I will add
+more tutorials and documentation and create a forum for community support. In case of
+less adoption, I plan to write technical tutorials and blog posts introducing Bubble as a
+programming language for beginners, including children and adults new to programming.
+Future directions for Bubble
+1. Development of a terminal user interface (TUI) specifically designed for Bubble,
+incorporating visual aids to support learning.
+2. Creation of a curriculum and set of coding challenges to guide learners through
+programming concepts using Bubble.
+3. Expansion of the language to include more advanced programming concepts as learners
+progress.
+Conclusion
+Bubble represents an innovative approach to addressing the challenges faced by novice
+programmers transitioning from block-based to text-based programming. By providing a carefully
+designed language with intuitive syntax and helpful error messages, Bubble aims to make the
+learning process smoother and more enjoyable for beginners.
+As the project progresses, continuous feedback from educators and learners will be crucial in
+refining the language and ensuring its effectiveness as a learning tool. With its focus on simplicity
+and user-friendliness, Bubble has the potential to become a valuable asset in the programming
+education landscape, helping to cultivate the next generation of skilled programmers.
+References
+[1] Moors, L., Luxton-Reilly, A., & Denny, P. (2018). Transitioning from block-based to text-based
+programming languages. In 2018 International Conference on Learning and Teaching in Computing
+and Engineering (LaTICE) (pp. 57-64). IEEE.
+[2] Altadmri, A., & Brown, N. C. (2015). 37 million compilations: Investigating novice programming
+mistakes in large-scale student data. In Proceedings of the 46th ACM Technical Symposium on
+Computer Science Education (pp. 522-527).
+[3] Becker, B. A., Denny, P., Pettit, R., Bouchard, D., Bouvier, D. J., Harrington, B., ... & Prather, J.
+(2019). Compiler error messages considered unhelpful: The landscape of text-based programming
+error message research. In Proceedings of the Working Group Reports on Innovation and
+Technology in Computer Science Education (pp. 177-210).
+[4] Wikipedia contributors, "HyperTalk," Wikipedia, The Free Encyclopedia. [Online]. Available:
+https://en.wikipedia.org/wiki/HyperTalk. [Accessed: 01 July 2024]
+[5] P. Denny, J. Prather, and B. A. Becker, "On Designing Programming Error Messages for Novices:
+Readability and its Constituent Factors," in Proceedings of the 2021 CHI Conference on Human
+Factors in Computing Systems, May 2021
+
+
+		<Playground initialCode='say "hello world!"' />

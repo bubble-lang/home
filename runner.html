@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble WASM Runner</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        textarea { width: 100%; height: 200px; }
+        #output { white-space: pre-wrap; background-color: #f0f0f0; padding: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Bubble WASM Runner</h1>
+    <textarea id="program">set name to input "What is your name? "
+say "Hello, " + name + "! Let's play a simple guessing game."
+
+set secretNumber to 24
+set attempts to 0
+
+set guess to input "Guess a number: "
+if guess is equal to secretNumber
+    say "Correct! You guessed it!"
+else
+    say "Sorry, that's not correct. The number was " + secretNumber
+end
+
+say "Thanks for playing, " + name + "!"</textarea>
+    <br>
+    <button onclick="runProgram()">Run Program</button>
+    <div id="output"></div>
+
+    <script src="./public/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        let bubbleREPL;
+
+        WebAssembly.instantiateStreaming(fetch("./public/bubble.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+            bubbleREPL = window.bubbleREPL;
+
+            bubbleREPL.setOutputCallback(function(output) {
+                document.getElementById('output').textContent += output + '\n';
+            });
+        });
+
+        function runProgram() {
+            if (!bubbleREPL) {
+                console.error("WASM not loaded yet");
+                return;
+            }
+            const program = document.getElementById('program').value;
+            document.getElementById('output').textContent = '';
+            try {
+                const result = bubbleREPL.runBubbleProgram(program);
+                if (result) {
+                    document.getElementById('output').textContent += 'Result: ' + result + '\n';
+                }
+            } catch (error) {
+                console.error("Error running program:", error);
+                document.getElementById('output').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

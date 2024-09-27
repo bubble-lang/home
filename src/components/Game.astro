@@ -1,0 +1,286 @@
+---
+interface Props {
+  showCode?: boolean;
+  initialCode?: string;
+  title?: string;
+}
+
+const { showCode = false, initialCode = '', title = '' } = Astro.props;
+
+
+---
+
+<div class="my-4 relative  max-w-4xl mx-auto">
+  <h2 class="text-xl font-semibold mb-4">{title}</h2>
+  <div class="border md:min-w-[500px] rounded-md p-4 relative">
+    <div class="loading-container mb-4">
+      <div class="text-center mb-2">Loading...</div>
+      <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div class="progress-bar bg-slate-200 h-2.5 rounded-full" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="error-container mb-4 text-red-500" style="display: none;"></div>
+
+    <div class="flex flex-col gap-4 justify-center items-stretch">
+
+      <div class="">
+        {showCode && (
+          <textarea
+            id="program"
+            class="w-full overflow-auto h-[50vh] px-4 py-2  rounded-xl border-4 border-blue-50 text-slate-700 focus:outline-none focus:ring-2 ring-inset focus:ring-blue-50 font-mono"
+          >{initialCode}</textarea>
+        )}
+       
+      </div>
+      <div class="flex justify-end">
+        <button
+        id="run-button"
+        class="px-4 rounded-xl border-4 border-blue-50 bg-yellow-300 text-black hover:bg-yellow-400 focus:outline-none"
+      >
+        Run Program
+      </button>
+      </div>
+      <div class=" w-1/2">
+        <div class="terminal-container  overflow-hidden transition-all duration-500 ease-in-out mt-4">
+          <div id="output" class="terminal font-mono text-lg"></div>
+        </div>
+        <div class="input-container w-full py-4 border-t mt-4" style="display: none;">
+          <div class="flex">
+            <div class="input-wrapper flex-grow relative">
+              <input
+                type="text"
+                id="user-input"
+                class="input w-full px-4 py-2 rounded-l-xl border-4 border-r-0 border-blue-400 text-blue-700 focus:outline-none focus:ring-2 ring-inset focus:ring-blue-300 font-mono"
+                placeholder="Type here and press Enter to submit"
+              />
+              <span class="retro-cursor"></span>
+            </div>
+            <button
+              id="submit-button"
+              class="px-4 pt-1 rounded-r-xl border-4 border-l-0 border-blue-400 bg-yellow-300 text-black hover:bg-yellow-400 focus:outline-none h-full flex items-center whitespace-nowrap"
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+   
+  </div>
+</div>
+
+<style>
+  .terminal-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  .terminal-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  .terminal-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  .terminal-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  .input-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .retro-cursor {
+    position: absolute;
+    bottom: 12px;
+    left: 4px;
+    width: 10px;
+    height: 20px;
+    background-color: #3b82f6;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .input:focus + .retro-cursor {
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+  .input {
+    caret-color: transparent;
+    line-height: 1.5;
+    padding-bottom: 6px;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+</style>
+
+<script>
+  const loadingContainer = document.querySelector('.loading-container');
+  const errorContainer = document.querySelector('.error-container');
+  const terminalContainer = document.querySelector('.terminal-container');
+  const inputContainer = document.querySelector('.input-container');
+  const progressBar = document.querySelector('.progress-bar');
+  const output = document.getElementById('output');
+  const userInput = document.getElementById('user-input');
+  const runButton = document.getElementById('run-button');
+  const submitButton = document.getElementById('submit-button');
+  const program = document.getElementById('program');
+  const retroCursor = document.querySelector('.retro-cursor');
+
+  const defaultCode = `set name to input "What is your name? "
+say "Hello, " + name + "! Let's play a simple guessing game."
+set secretNumber to 24
+set attempts to 0
+set guess to input "Guess a number: "
+say guess
+if guess is equal to secretNumber
+    say "Correct! You guessed it!"
+else
+    say "Sorry, that's not correct. The number was " + secretNumber
+end if
+say "Thanks for playing, " + name + "!"`;
+
+  let bubbleREPL;
+  let waitingForInput = false;
+  let resolveInput;
+  let currentCode = program ? program.value : defaultCode;
+
+  async function loadAndRunBubbleREPL() {
+    try {
+      updateProgress(10, "Fetching WASM executor...");
+      const response = await fetch("/public/wasm_exec.js");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch WASM executor: ${response.status} ${response.statusText}`);
+      }
+      const wasmExecScript = await response.text();
+      console.log("WASM executor fetched successfully");
+
+      updateProgress(30, "Evaluating WASM executor...");
+      eval(wasmExecScript);
+      console.log("WASM executor evaluated successfully");
+
+      updateProgress(50, "Fetching Bubble REPL WASM...");
+      const go = new Go();
+      const result = await WebAssembly.instantiateStreaming(
+        fetch("/public/bubble.wasm"),
+        go.importObject
+      );
+      console.log("Bubble REPL WASM fetched and instantiated successfully");
+
+      updateProgress(70, "Initializing Bubble REPL...");
+      go.run(result.instance);
+      bubbleREPL = globalThis.bubbleREPL;
+      if (!bubbleREPL) {
+        throw new Error("bubbleREPL not found in global scope");
+      }
+      console.log("Bubble REPL initialized successfully");
+
+      updateProgress(100, "bubble bubble bubble!");
+      setTimeout(() => {
+        loadingContainer.style.display = "none";
+        runButton.disabled = false;
+      }, 500);
+
+      bubbleREPL.setOutputCallback(handleOutput);
+      bubbleREPL.setInputCallback(handleInput);
+
+    } catch (error) {
+      console.error("Error loading Bubble REPL:", error);
+      showError(`Failed to load Bubble REPL: ${error.message}`);
+    }
+  }
+
+  function updateProgress(percentage, message) {
+    progressBar.style.width = `${percentage}%`;
+    loadingContainer.querySelector("div").textContent = message;
+  }
+
+  function showError(message) {
+    loadingContainer.style.display = "none";
+    errorContainer.style.display = "block";
+    errorContainer.textContent = message;
+  }
+
+  function handleOutput(text) {
+    text = text.trim();
+    if (text !== "") {
+      const newElement = document.createElement("div");
+      newElement.textContent = text;
+      newElement.style.animation = "fadeIn 0.5s ease-out";
+      output.appendChild(newElement);
+      revealTerminal();
+    }
+  }
+
+  function handleInput(message) {
+    return new Promise((resolve) => {
+      waitingForInput = true;
+      resolveInput = resolve;
+      userInput.placeholder = message || "Enter input...";
+      inputContainer.style.display = "block";
+      userInput.focus();
+    });
+  }
+
+  function revealTerminal() {
+    terminalContainer.style.height = 'auto';
+    setTimeout(() => {
+      terminalContainer.style.overflowY = 'auto';
+    }, 500);
+  }
+
+  function runProgram() {
+    if (!bubbleREPL) {
+      console.error("WASM not loaded yet");
+      return;
+    }
+    if (program) {
+      currentCode = program.value;
+    }
+    output.innerHTML = '';
+    terminalContainer.style.height = '0';
+    terminalContainer.style.overflowY = 'hidden';
+    inputContainer.style.display = 'none';
+    bubbleREPL.runBubbleProgram(currentCode);
+  }
+
+  function submitInput() {
+    if (waitingForInput) {
+      const input = userInput.value;
+      userInput.value = '';
+      inputContainer.style.display = 'none';
+      waitingForInput = false;
+      resolveInput(input);
+    }
+  }
+
+  function updateCursorPosition() {
+    const rect = userInput.getBoundingClientRect();
+    const inputStyle = window.getComputedStyle(userInput);
+    const inputPaddingLeft = parseFloat(inputStyle.paddingLeft);
+    const cursorLeft = userInput.selectionStart * 9.6 + inputPaddingLeft; // Adjust 9.6 based on your font size
+    retroCursor.style.left = `${cursorLeft}px`;
+  }
+
+  runButton.addEventListener('click', runProgram);
+  submitButton.addEventListener('click', submitInput);
+  userInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      submitInput();
+    }
+  });
+
+  userInput.addEventListener('input', updateCursorPosition);
+  userInput.addEventListener('click', updateCursorPosition);
+  userInput.addEventListener('keyup', updateCursorPosition);
+
+  if (program) {
+    program.addEventListener('input', (event) => {
+      currentCode = event.target.value;
+    });
+  }
+
+  loadAndRunBubbleREPL();
+</script>

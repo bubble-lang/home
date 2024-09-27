@@ -1,0 +1,65 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Main from "../components/Main.astro";
+import FormattedDate from '../components/FormattedDate.astro';
+
+type Props = CollectionEntry<'docs'>['data'];
+const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} />
+		
+	</head>
+	<body class="min-h-screen flex flex-col">
+		<Header />
+		<Main class="">
+			<article class="bg-white  rounded-lg overflow-hidden max-w-4xl mx-auto">
+				<div class="p-1 md:p-8">
+					<div class="mb-6 ">
+						<a href="/docs" class="text-slate-600 font-sans text-sm "> &larr; Back</a>
+						<h1 class="text-3xl md:text-4xl mb-2">{title}</h1>
+						<div class="text-sm text-gray-600">
+							<FormattedDate date={pubDate} />
+							{updatedDate && (
+								<span class="ml-2 italic">
+									(Updated: <FormattedDate date={updatedDate} />)
+								</span>
+							)}
+						</div>
+					</div>
+					{heroImage && (
+						<div class="relative h-64 md:h-96">
+							<img
+								src={heroImage}
+								alt=""
+								class="w-full h-full object-cover"
+							/>
+						</div>
+					)}
+					<hr class="my-6" />
+					<div class="">
+						<slot />
+					</div>
+				</div>
+			</article>
+		</Main>
+		<Footer />
+	</body>
+</html>
+
+
+<style is:global>
+
+ .astro-code {
+	padding: 1rem !important;
+	border-radius: 8px;
+	margin: 2rem 0 !important;
+	font-size: 1rem;
+}
+
+</style>

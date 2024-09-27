@@ -1,0 +1,46 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import Main from '../components/Main.astro';
+import Game from '../components/Game.astro';
+
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+<section class="">
+
+
+
+
+
+	<Game showCode={true} 
+	
+	initialCode=
+	`set name to input "What is your name? "
+say "Hello, " + name + "! Let's play a simple guessing game."
+set secretNumber to 24
+set attempts to 0
+set guess to input "Guess a number: "
+say "You guessed " + guess
+if guess is equal to secretNumber
+    say "Correct! You guessed it!"
+else
+    say "Sorry, that's not correct. The number was " + secretNumber
+end if
+say "Thanks for playing, " + name + "!"`
+	/>
+
+			
+</section>
+
+		<Footer />
+	</body>
+</html>

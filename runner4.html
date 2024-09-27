@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble WASM Runner with REPL</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        textarea { width: 100%; height: 100px; }
+        #output, #repl-output { white-space: pre-wrap; background-color: #f0f0f0; padding: 10px; margin-top: 20px; }
+        #input-container { display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Bubble WASM Runner with REPL</h1>
+    
+    <h2>Interactive Program Execution</h2>
+    <textarea id="program">set name to input "What is your name? "
+say "Hello, " + name + "! Let's play a simple guessing game."
+set secretNumber to 24
+set attempts to 0
+set guess to input "Guess a number: "
+if guess is equal to secretNumber
+    say "Correct! You guessed it!"
+else
+    say "Sorry, that's not correct. The number was " + secretNumber
+end
+say "Thanks for playing, " + name + "!"</textarea>
+    <br>
+    <button onclick="runProgram()">Run Program</button>
+    <div id="output"></div>
+    <div id="input-container">
+        <input type="text" id="user-input">
+        <button onclick="submitInput()">Submit</button>
+    </div>
+
+    <h2>REPL</h2>
+    <textarea id="repl-input" placeholder="Enter Bubble code here"></textarea>
+    <br>
+    <button onclick="evaluateREPL()">Evaluate</button>
+    <div id="repl-output"></div>
+
+    <script src="./public/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        let bubbleREPL;
+        let waitingForInput = false;
+        let resolveInput;
+
+        WebAssembly.instantiateStreaming(fetch("./public/bubble.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+            bubbleREPL = window.bubbleREPL;
+            bubbleREPL.setOutputCallback(function(output) {
+                document.getElementById('output').textContent += output + '\n';
+                if (output.includes('?')) {
+                    document.getElementById('input-container').style.display = 'block';
+                }
+            });
+            bubbleREPL.setInputCallback(function() {
+                return new Promise((resolve) => {
+                    waitingForInput = true;
+                    resolveInput = resolve;
+                    document.getElementById('input-container').style.display = 'block';
+                });
+            });
+        });
+
+        function runProgram() {
+            if (!bubbleREPL) {
+                console.error("WASM not loaded yet");
+                return;
+            }
+            const program = document.getElementById('program').value;
+            document.getElementById('output').textContent = '';
+            document.getElementById('input-container').style.display = 'none';
+            bubbleREPL.runBubbleProgram(program);
+        }
+
+        function submitInput() {
+            if (waitingForInput) {
+                const input = document.getElementById('user-input').value;
+                document.getElementById('user-input').value = '';
+                document.getElementById('input-container').style.display = 'none';
+                waitingForInput = false;
+                resolveInput(input);
+            }
+        }
+
+        function evaluateREPL() {
+            if (!bubbleREPL) {
+                console.error("WASM not loaded yet");
+                return;
+            }
+            const input = document.getElementById('repl-input').value;
+            const result = bubbleREPL.evaluateBubble(input);
+            document.getElementById('repl-output').textContent += '> ' + input + '\n' + result + '\n\n';
+            document.getElementById('repl-input').value = '';
+        }
+    </script>
+</body>
+</html>
