@@ -4,11 +4,11 @@ author: "Joe Chelladurai"
 ---
 
 
-import Playground from "../../components/playground.astro";
+import Playground from "../../components/Playground.astro";
 
 <Playground initialCode='say "hello world!"' active={false} />
 
-## Abstract 
+## Abstract
 In this report, I introduce a new programming language for beginners called Bubble. Bubble is aimed to be simple and easy to learn. It is inspired by HyperTalk, Hedy, and Scratch. Bubble aims to bring the joy of programming to beginners and help climb the command line wall (Appleton).
 
 ## Executive Summary
@@ -94,7 +94,7 @@ unbalanced parentheses, incorrect semi-colons, and wrong separators [2].
 Similarly, error messages in many programming languages can be difficult for beginners to
 understand [3]. This can lead to frustration and discouragement among new learners.
 
-So I thought to myself, can I create a programming language without much punctuation. This was my initial expectation. 
+So I thought to myself, can I create a programming language without much punctuation. This was my initial expectation.
 
 ### Proposed Solution: Bubble Programming Language
 
@@ -131,7 +131,7 @@ barriers to entry for new programmers.
 
 ### Go
 
-Bubble will build on go. 
+Bubble will build on go.
 
 The following are the implementation steps.
 
@@ -163,14 +163,14 @@ Bubble's design philosophy centers around simplicity and clarity.
 
 import lp from "../../components/interactive/tp.jsx";
 
-  <lp 
-       
+  <lp
+
         client:load
       />
 
 
 
-This is an visualiztion of 
+This is an visualiztion of
 
 import Tokenizer from "../../components/interactive/tokenizer.jsx";
 
@@ -186,7 +186,7 @@ set y to 30`} />
 
 import Parser from "../../components/interactive/parser.jsx";
 
- <Parser 
+ <Parser
         title="Bubble Lang Parser Demo"
         subtitle="Watch how the parser builds an AST"
         footnote="This is a simplified demonstration of the parsing process."
