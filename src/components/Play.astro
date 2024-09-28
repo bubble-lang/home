@@ -191,7 +191,7 @@ const { initialCode = "", active = false } = Astro.props;
 
     async runCode(code) {
       code = code.trim();
-      code = code.replace(/[""]/g, '"').replace(/['']/g, "'");
+      code = code.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 
       if (!this.isREPLReady) {
         this.appendToTerminal("REPL not loaded yet. Please wait...");
@@ -262,6 +262,7 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
+
     handleInput(message) {
       return new Promise((resolve) => {
         this.isWaitingForInput = true;
@@ -276,19 +277,20 @@ const { initialCode = "", active = false } = Astro.props;
       });
     }
 
+
     submitInput() {
-      const userInput = this.input.value;
-      this.appendToTerminal(`> ${userInput}`);
-      this.inputValue = userInput;
-      this.input.value = "";
-      this.input.placeholder = "Type your code here and press Enter to run";
-      this.runButton.textContent = "Run";
-      this.isWaitingForInput = false;
-      if (this.inputResolve) {
-        this.inputResolve(userInput);
-        this.inputResolve = null;
-      }
-    }
+          const userInput = this.input.value;
+          this.appendToTerminal(`> ${userInput}`);
+          this.inputValue = userInput;
+          this.input.value = "";
+          this.input.placeholder = "Type your code here and press Enter to run";
+          this.runButton.textContent = "Run";
+          this.isWaitingForInput = false;
+          if (this.inputResolve) {
+            this.inputResolve(userInput);
+            this.inputResolve = null;
+          }
+        }
 
     clearInputAndResetCursor() {
       this.input.value = '';
