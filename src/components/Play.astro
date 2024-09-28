@@ -47,7 +47,8 @@ const { initialCode = "", active = false } = Astro.props;
   </div>
 </bubble-repl-tutorial>
 
-<script is:inline>
+<script>
+// @ts-nocheck
   class BubbleREPLTutorial extends HTMLElement {
     constructor() {
       super();
