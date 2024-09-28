@@ -17,12 +17,6 @@ const { initialCode = "", active = false } = Astro.props;
       <slot name="example"></slot>
     </div>
     <div class="border md:min-w-[500px] rounded-md p-4 relative">
-      <div class="loading-container mb-4">
-        <div class="text-center mb-2">Loading...</div>
-        <div class="w-full bg-gray-200 rounded-full h-2.5">
-          <div class="progress-bar bg-slate-200 h-2.5 rounded-full" style="width: 0%"></div>
-        </div>
-      </div>
       <div class="error-container mb-4 text-red-500" style="display: none;"></div>
       <div class="terminal-container h-0 overflow-hidden transition-all duration-500 ease-in-out mb-4">
         <div class="terminal font-mono text-lg"></div>
@@ -53,63 +47,6 @@ const { initialCode = "", active = false } = Astro.props;
   </div>
 </bubble-repl-tutorial>
 
-<style>
-  .input-button-container {
-    display: flex;
-    align-items: stretch;
-  }
-  .input-wrapper {
-    flex-grow: 1;
-    position: relative;
-  }
-  .run-button {
-    margin-left: -1px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-  .retro-cursor {
-    position: absolute;
-    bottom: 10px;
-    left: 22px;
-    width: 14px;
-    height: 4px;
-    background-color: blue;
-    animation: blink 1s step-end infinite;
-  }
-  .input {
-    caret-color: transparent;
-    line-height: 1.5;
-    padding-bottom: 6px;
-    white-space: nowrap;
-    overflow-x: auto;
-  }
-  .input::-webkit-scrollbar {
-    display: none;
-  }
-  .input {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .terminal-container::-webkit-scrollbar {
-    width: 8px;
-  }
-  .terminal-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-  }
-  .terminal-container::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-  }
-  .terminal-container::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-</style>
-
 <script is:inline>
   class BubbleREPLTutorial extends HTMLElement {
     constructor() {
@@ -122,24 +59,23 @@ const { initialCode = "", active = false } = Astro.props;
       this.inputValue = null;
       this.inputBuffer = '';
       this.isInBlock = false;
+      this.blockType = null;
     }
 
     connectedCallback() {
       this.initialCode = this.getAttribute('data-initial-code') || '';
       this.active = this.getAttribute('data-active') === 'true';
       this.terminal = this.querySelector('.terminal');
-      this.loadingContainer = this.querySelector('.loading-container');
       this.errorContainer = this.querySelector('.error-container');
       this.terminalContainer = this.querySelector('.terminal-container');
       this.inputContainer = this.querySelector('.input-container');
-      this.progressBar = this.querySelector('.progress-bar');
       this.input = this.querySelector('.input');
       this.runButton = this.querySelector('.run-button');
       this.solutionToggle = this.querySelector('.solution-toggle');
       this.solutionContent = this.querySelector('.solution-content');
       this.retroCursor = this.querySelector('.retro-cursor');
 
-      this.loadAndRunBubbleREPL();
+      document.addEventListener('wasm-environment-ready', () => this.initializeWASMInstance());
 
       this.input.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
@@ -161,52 +97,20 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
-    async loadAndRunBubbleREPL() {
+    async initializeWASMInstance() {
       try {
-        this.updateProgress(10, "Fetching WASM executor...");
-        const response = await fetch("/wasm_exec.js");
-        if (!response.ok) {
-          throw new Error(`Failed to fetch WASM executor: ${response.status} ${response.statusText}`);
+        const factory = document.querySelector('wasm-initializer-factory');
+        if (!factory) {
+          throw new Error("WASM Initializer Factory not found");
         }
-        const wasmExecScript = await response.text();
-        console.log("WASM executor fetched successfully");
-
-        this.updateProgress(30, "Evaluating WASM executor...");
-        eval(wasmExecScript);
-        console.log("WASM executor evaluated successfully");
-
-        this.updateProgress(50, "Fetching Bubble REPL WASM...");
-        const go = new Go();
-        const result = await WebAssembly.instantiateStreaming(
-          fetch("/bubble.wasm"),
-          go.importObject
-        );
-        console.log("Bubble REPL WASM fetched and instantiated successfully");
-
-        this.updateProgress(70, "Initializing Bubble REPL...");
-        go.run(result.instance);
-        this.bubbleInterpreter = globalThis.bubbleREPL;
-        if (!this.bubbleInterpreter) {
-          throw new Error("bubbleREPL not found in global scope");
-        }
+        this.bubbleInterpreter = await factory.createWASMInstance();
         this.isREPLReady = true;
-        console.log("Bubble REPL initialized successfully");
-
-        this.updateProgress(100, "bubble bubble bubble!");
-        setTimeout(() => {
-          this.loadingContainer.style.display = "none";
-          this.inputContainer.style.display = "block";
-          this.input.value = this.initialCode;
-          if (this.active) {
-            this.input.focus();
-          }
-          this.updateCursorPosition();
-        }, 500);
-
-        this.originalPrompt = window.prompt;
-        window.prompt = (message) => {
-          return this.handleInput(message);
-        };
+        this.inputContainer.style.display = "block";
+        this.input.value = this.initialCode;
+        if (this.active) {
+          this.input.focus();
+        }
+        this.updateCursorPosition();
 
         this.bubbleInterpreter.setOutputCallback((text) => {
           this.handleOutput(text);
@@ -217,22 +121,10 @@ const { initialCode = "", active = false } = Astro.props;
             return this.handleInput(message);
           });
         }
-
       } catch (error) {
-        console.error("Error loading Bubble REPL:", error);
-        this.showError(`Failed to load Bubble REPL: ${error.message}`);
+        console.error("Error initializing WASM instance:", error);
+        this.showError(`Failed to initialize REPL: ${error.message}`);
       }
-    }
-
-    updateProgress(percentage, message) {
-      this.progressBar.style.width = `${percentage}%`;
-      this.loadingContainer.querySelector("div").textContent = message;
-    }
-
-    showError(message) {
-      this.loadingContainer.style.display = "none";
-      this.errorContainer.style.display = "block";
-      this.errorContainer.textContent = message;
     }
 
     handleRunButton() {
@@ -245,63 +137,60 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
+    handleEnter() {
+      const currentLine = this.input.value.trim();
 
-  handleEnter() {
-    const currentLine = this.input.value.trim();
+      if (this.isWaitingForInput) {
+        this.submitInput();
+      } else if (this.isInBlock || this.isBlockStart(currentLine)) {
+        this.isInBlock = true;
+        this.inputBuffer += this.input.value + '\n';
+        this.appendToTerminal('> ' + this.input.value);
+        this.input.value = '  '; // Add indentation
+      } else {
+        this.runCode(this.input.value);
+      }
 
-    if (this.isWaitingForInput) {
-      this.submitInput();
-    } else if (this.isInBlock || this.isBlockStart(currentLine)) {
-      this.isInBlock = true;
-      this.inputBuffer += this.input.value + '\n';
-      this.appendToTerminal('> ' + this.input.value);
-      this.input.value = '  '; // Add indentation
-    } else {
-      this.runCode(this.input.value);
+      if (this.isBlockEnd(currentLine)) {
+        this.isInBlock = false;
+        this.runCode(this.inputBuffer);
+        this.inputBuffer = '';
+        this.blockType = null;
+      }
+
+      this.updateCursorPosition();
     }
 
-    if (this.isBlockEnd(currentLine)) {
-      this.isInBlock = false;
-      this.runCode(this.inputBuffer);
-      this.inputBuffer = '';
-      this.blockType = null;
+    isBlockStart(line) {
+      if (/^if\b/.test(line)) {
+        this.blockType = 'if';
+        return true;
+      } else if (/^repeat\b/.test(line)) {
+        this.blockType = 'repeat';
+        return true;
+      } else if (/^while\b/.test(line)) {
+        this.blockType = 'while';
+        return true;
+      }
+      return false;
     }
 
-    this.updateCursorPosition();
-  }
-
-  isBlockStart(line) {
-    if (/^if\b/.test(line)) {
-      this.blockType = 'if';
-      return true;
-    } else if (/^repeat\b/.test(line)) {
-      this.blockType = 'repeat';
-      return true;
-    } else if (/^while\b/.test(line)) {
-      this.blockType = 'while';
-      return true;
+    isBlockEnd(line) {
+      switch (this.blockType) {
+        case 'if':
+          return /^end\s+if\b/.test(line);
+        case 'repeat':
+          return /^end\s+repeat\b/.test(line);
+        case 'while':
+          return /^end\s+while\b/.test(line);
+        default:
+          return false;
+      }
     }
-    return false;
-  }
-
-  isBlockEnd(line) {
-    switch (this.blockType) {
-      case 'if':
-        return /^end\s+if\b/.test(line);
-      case 'repeat':
-        return /^end\s+repeat\b/.test(line);
-      case 'while':
-        return /^end\s+while\b/.test(line);
-      default:
-        return false;
-    }
-  }
 
     async runCode(code) {
-
       code = code.trim();
-     code = code.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
-
+      code = code.replace(/[""]/g, '"').replace(/['']/g, "'");
 
       if (!this.isREPLReady) {
         this.appendToTerminal("REPL not loaded yet. Please wait...");
@@ -337,7 +226,6 @@ const { initialCode = "", active = false } = Astro.props;
           } else {
             const result = await this.bubbleInterpreter.runBubble(code);
             if (result !== undefined && result !== null) {
-              // Handle the case where result is not a string
               if (typeof result === 'object') {
                 this.handleOutput(JSON.stringify(result));
               } else {
@@ -360,7 +248,7 @@ const { initialCode = "", active = false } = Astro.props;
       const newElement = document.createElement("div");
       newElement.textContent = text;
       if (text.startsWith('>')) {
-        newElement.style.color = 'blue'; // or any color you prefer for input
+        newElement.style.color = 'blue';
       }
       this.terminal.appendChild(newElement);
       this.terminalContainer.scrollTop = this.terminalContainer.scrollHeight;
@@ -373,22 +261,19 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
-   handleInput(message) {
-  return new Promise((resolve) => {
-    this.isWaitingForInput = true;
-    this.inputResolve = resolve;
-    this.input.placeholder = message || "Enter input...";
-    this.input.focus();
-    this.runButton.textContent = "Submit";
-    this.appendToTerminal(message || "Enter input:");
-  }).then((userInput) => {
-    this.inputValue = userInput.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
-
-
-    // Convert curly quotes to straight double quotes
-    return this.inputValue;
-  });
-}
+    handleInput(message) {
+      return new Promise((resolve) => {
+        this.isWaitingForInput = true;
+        this.inputResolve = resolve;
+        this.input.placeholder = message || "Enter input...";
+        this.input.focus();
+        this.runButton.textContent = "Submit";
+        this.appendToTerminal(message || "Enter input:");
+      }).then((userInput) => {
+        this.inputValue = userInput.replace(/[""]/g, '"').replace(/['']/g, "'");
+        return this.inputValue;
+      });
+    }
 
     submitInput() {
       const userInput = this.input.value;
@@ -448,7 +333,16 @@ const { initialCode = "", active = false } = Astro.props;
       context.font = getComputedStyle(this.input).font;
       return context.measureText(text).width;
     }
+
+    showError(message) {
+      if (this.errorContainer) {
+        this.errorContainer.style.display = 'block';
+        this.errorContainer.textContent = message;
+      }
+    }
   }
 
-  customElements.define('bubble-repl-tutorial', BubbleREPLTutorial);
+  if (!customElements.get('bubble-repl-tutorial')) {
+    customElements.define('bubble-repl-tutorial', BubbleREPLTutorial);
+  }
 </script>

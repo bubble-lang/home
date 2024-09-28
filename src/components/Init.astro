@@ -1,0 +1,68 @@
+---
+// MinimalWASMInitializer.astro
+---
+<wasm-initializer>
+  <div id="wasm-status">Loading WASM...</div>
+</wasm-initializer>
+
+<script is:inline>
+class WASMInitializer extends HTMLElement {
+  constructor() {
+    super();
+    this.statusElement = this.querySelector('#wasm-status');
+  }
+
+  connectedCallback() {
+    this.loadWASM();
+  }
+
+  async loadWASM() {
+    try {
+      this.updateStatus('Fetching WASM executor...');
+      const response = await fetch("/wasm_exec.js");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch WASM executor: ${response.status} ${response.statusText}`);
+      }
+
+      this.updateStatus('Evaluating WASM executor...');
+      const wasmExecScript = await response.text();
+      eval(wasmExecScript);
+
+      this.updateStatus('Initializing Go runtime...');
+      const go = new Go();
+
+      this.updateStatus('Fetching Bubble WASM...');
+      const wasm = await fetch("/bubble.wasm");
+      if (!wasm.ok) {
+        throw new Error(`Failed to fetch Bubble WASM: ${wasm.status} ${wasm.statusText}`);
+      }
+
+      this.updateStatus('Instantiating WASM...');
+      const result = await WebAssembly.instantiateStreaming(wasm, go.importObject);
+
+      this.updateStatus('Running WASM...');
+      go.run(result.instance);
+
+      if (typeof globalThis.bubbleREPL !== 'undefined') {
+        this.updateStatus('WASM loaded successfully');
+        document.dispatchEvent(new CustomEvent('wasm-loaded'));
+      } else {
+        throw new Error('bubbleREPL not found in global scope');
+      }
+    } catch (error) {
+      this.updateStatus(`Error loading WASM: ${error.message}`, true);
+      console.error("Error loading WASM:", error);
+    }
+  }
+
+  updateStatus(message, isError = false) {
+    console.log(message);
+    this.statusElement.textContent = message;
+    if (isError) {
+      this.statusElement.style.color = 'red';
+    }
+  }
+}
+
+customElements.define('wasm-initializer', WASMInitializer);
+</script>

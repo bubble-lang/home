@@ -1,0 +1,88 @@
+---
+---
+<wasm-initializer-factory>
+  <div class="loading-container mb-4">
+    <div class="status-message text-center mb-2">Preparing WASM environment...</div>
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+      <div class="progress-bar bg-slate-200 h-2.5 rounded-full" style="width: 0%"></div>
+    </div>
+  </div>
+  <div class="error-container mb-4 text-red-500" style="display: none;"></div>
+</wasm-initializer-factory>
+
+<script is:inline>
+  class WASMInitializerFactory extends HTMLElement {
+    constructor() {
+      super();
+      this.wasmModule = null;
+      this.Go = null;
+    }
+
+    connectedCallback() {
+      this.loadWASMEnvironment();
+    }
+
+    async loadWASMEnvironment() {
+      try {
+        await this.updateProgress(30, "Fetching WASM executor...");
+        const response = await fetch("/wasm_exec.js");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch WASM executor: ${response.status} ${response.statusText}`);
+        }
+        const wasmExecScript = await response.text();
+
+        await this.updateProgress(60, "Evaluating WASM executor...");
+        eval(wasmExecScript);
+        this.Go = Go;
+
+        await this.updateProgress(90, "Fetching Bubble REPL WASM...");
+        const wasm = await fetch("/bubble.wasm");
+        if (!wasm.ok) {
+          throw new Error(`Failed to fetch Bubble WASM: ${wasm.status} ${wasm.statusText}`);
+        }
+        this.wasmModule = await WebAssembly.compileStreaming(wasm);
+
+        await this.updateProgress(100, "WASM environment ready!");
+        this.hideLoading();
+        document.dispatchEvent(new CustomEvent('wasm-environment-ready'));
+      } catch (error) {
+        console.error("Error preparing WASM environment:", error);
+        this.showError(`Failed to prepare WASM environment: ${error.message}`);
+      }
+    }
+
+    async createWASMInstance() {
+      if (!this.wasmModule || !this.Go) {
+        throw new Error("WASM environment not ready");
+      }
+      const go = new this.Go();
+      const instance = await WebAssembly.instantiate(this.wasmModule, go.importObject);
+      go.run(instance);
+      return globalThis.bubbleREPL;
+    }
+
+    updateProgress(percentage, message) {
+      const progressBar = this.querySelector('.progress-bar');
+      const statusMessage = this.querySelector('.status-message');
+      if (progressBar) progressBar.style.width = `${percentage}%`;
+      if (statusMessage) statusMessage.textContent = message;
+    }
+
+    hideLoading() {
+      const loadingContainer = this.querySelector('.loading-container');
+      if (loadingContainer) loadingContainer.style.display = 'none';
+    }
+
+    showError(message) {
+      const errorContainer = this.querySelector('.error-container');
+      if (errorContainer) {
+        errorContainer.style.display = 'block';
+        errorContainer.textContent = message;
+      }
+    }
+  }
+
+  if (!customElements.get('wasm-initializer-factory')) {
+    customElements.define('wasm-initializer-factory', WASMInitializerFactory);
+  }
+</script>

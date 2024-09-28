@@ -4,8 +4,16 @@ description: 'A beginner-friendly introduction to the Bubble programming languag
 heroImage: '/blog-placeholder-2.jpg'
 ---
 
-import Playground from "../../components/Playground.astro";
-import Game from "../../components/Game.astro";
+
+import WASMINIT from "../../components/WASMINIT.astro";
+import Play from "../../components/Play.astro";
+
+
+<WASMINIT />
+
+<Play />
+
+<Play />
 
 # Welcome to Bubble
 
@@ -21,7 +29,6 @@ say "Hello, World!"
 
 Run this code and you'll see "Hello, World!" printed to the console. Congratulations, you just wrote your first Bubble program!
 
-<Playground initialCode ={`say "Hello World!"`} />
 
 ## Variables
 
@@ -41,8 +48,7 @@ say x
 say y
 ```
 
-<Playground initialCode={`say "Hello World!"
-set x to 5`} />
+
 
 
 

@@ -1,0 +1,107 @@
+---
+// MinimalBubbleREPL.astro
+---
+<bubble-repl>
+  <div class="repl-status">Waiting for WASM...</div>
+  <div class="output" style="border: 1px solid #ccc; min-height: 100px; margin: 10px 0; padding: 5px;"></div>
+  <input type="text" class="input" placeholder="Enter code here" disabled />
+  <button class="run-button" disabled>Run</button>
+</bubble-repl>
+
+<script is:inline>
+class BubbleREPL extends HTMLElement {
+  static instanceCounter = 0;
+  static instances = new Map();
+
+  constructor() {
+    super();
+    this.instanceId = BubbleREPL.instanceCounter++;
+    BubbleREPL.instances.set(this.instanceId, this);
+    this.statusElement = this.querySelector('.repl-status');
+    this.outputElement = this.querySelector('.output');
+    this.inputElement = this.querySelector('.input');
+    this.runButton = this.querySelector('.run-button');
+
+    this.onWASMLoaded = this.onWASMLoaded.bind(this);
+    this.runCode = this.runCode.bind(this);
+    this.handleOutput = this.handleOutput.bind(this);
+  }
+
+  connectedCallback() {
+    document.addEventListener('wasm-loaded', this.onWASMLoaded);
+    this.runButton.addEventListener('click', this.runCode);
+
+    setTimeout(() => {
+      if (this.statusElement.textContent === 'Waiting for WASM...') {
+        this.statusElement.textContent = 'Error: WASM loading timed out';
+        this.statusElement.style.color = 'red';
+      }
+    }, 10000);
+  }
+
+  onWASMLoaded() {
+    if (!globalThis.bubbleREPL) {
+      this.statusElement.textContent = 'Error: bubbleREPL not found';
+      this.statusElement.style.color = 'red';
+      return;
+    }
+
+    this.statusElement.textContent = 'REPL ready';
+    this.statusElement.style.color = 'green';
+    this.inputElement.disabled = false;
+    this.runButton.disabled = false;
+
+    if (!globalThis.bubbleREPL.originalOutputCallback) {
+      globalThis.bubbleREPL.originalOutputCallback = globalThis.bubbleREPL.outputCallback;
+    }
+
+    globalThis.bubbleREPL.setOutputCallback((text) => {
+      const currentInstance = BubbleREPL.instances.get(globalThis.currentREPLInstance);
+      if (currentInstance) {
+        console.log(`REPL ${currentInstance.instanceId} output:`, text);
+        currentInstance.handleOutput(text);
+      }
+      if (globalThis.bubbleREPL.originalOutputCallback) {
+        globalThis.bubbleREPL.originalOutputCallback(text);
+      }
+    });
+
+    this.handleOutput("REPL is ready. Type your code and click 'Run'.");
+  }
+
+  async runCode() {
+    const code = this.inputElement.value;
+    if (code.trim() === '') return;
+
+    this.handleOutput(`> ${code}`);
+
+    try {
+      console.log(`REPL ${this.instanceId} running code:`, code);
+      globalThis.currentREPLInstance = this.instanceId;
+      const result = await globalThis.bubbleREPL.runBubble(code);
+      console.log(`REPL ${this.instanceId} execution result:`, result);
+
+      if (result !== undefined && result !== null) {
+        this.handleOutput(result.toString());
+      }
+    } catch (error) {
+      console.error(`REPL ${this.instanceId} error:`, error);
+      this.handleOutput(`Error: ${error.message}`);
+    } finally {
+      globalThis.currentREPLInstance = undefined;
+    }
+
+    this.inputElement.value = '';
+  }
+
+  handleOutput(text) {
+    console.log(`REPL ${this.instanceId} handling output:`, text);
+    const outputLine = document.createElement('div');
+    outputLine.textContent = text;
+    this.outputElement.appendChild(outputLine);
+    this.outputElement.scrollTop = this.outputElement.scrollHeight;
+  }
+}
+
+customElements.define('bubble-repl', BubbleREPL);
+</script>
