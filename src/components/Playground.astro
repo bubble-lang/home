@@ -113,16 +113,17 @@ const { initialCode = "", active = false } = Astro.props;
 <script is:inline>
   class BubbleREPLTutorial extends HTMLElement {
     constructor() {
-      super();
-      this.bubbleInterpreter = null;
-      this.isREPLReady = false;
-      this.isFirstRun = true;
-      this.isWaitingForInput = false;
-      this.inputResolve = null;
-      this.inputValue = null;
-      this.inputBuffer = '';
-      this.isInBlock = false;
-    }
+        super();
+        this.bubbleInterpreter = null;
+        this.isREPLReady = false;
+        this.isFirstRun = true;
+        this.isWaitingForInput = false;
+        this.inputResolve = null;
+        this.inputValue = null;
+        this.inputBuffer = '';
+        this.isInBlock = false;
+        this.blockType = null;
+      }
 
     connectedCallback() {
       this.initialCode = this.getAttribute('data-initial-code') || '';
@@ -236,16 +237,62 @@ const { initialCode = "", active = false } = Astro.props;
     }
 
     handleRunButton() {
-      if (this.isInBlock) {
-        this.inputBuffer += this.input.value + '\n';
-        this.appendToTerminal('> ' + this.input.value);
-        this.input.value = '  '; // Add indentation
-      } else {
-        this.runCode(this.input.value);
-      }
-    }
+       const currentLine = this.input.value.trim();
 
-   
+       if (this.isWaitingForInput) {
+         this.submitInput();
+       } else if (this.isInBlock || this.isBlockStart(currentLine)) {
+         this.isInBlock = true;
+         this.inputBuffer += this.input.value + '\n';
+         this.appendToTerminal('> ' + this.input.value);
+         this.input.value = '  '; // Add indentation
+       } else {
+         this.runCode(this.input.value);
+       }
+
+       if (this.isBlockEnd(currentLine)) {
+         this.isInBlock = false;
+         this.runCode(this.inputBuffer);
+         this.inputBuffer = '';
+         this.blockType = null;
+       }
+
+       this.updateCursorPosition();
+     }
+
+     handleEnter() {
+       this.handleRunButton(); // Reuse the same logic for both Enter and Run button
+     }
+
+     isBlockStart(line) {
+       if (/^if\b/.test(line)) {
+         this.blockType = 'if';
+         return true;
+       } else if (/^repeat\b/.test(line)) {
+         this.blockType = 'repeat';
+         return true;
+       } else if (/^while\b/.test(line)) {
+         this.blockType = 'while';
+         return true;
+       }
+       return false;
+     }
+
+     isBlockEnd(line) {
+       switch (this.blockType) {
+         case 'if':
+           return /^end\s+if\b/.test(line);
+         case 'repeat':
+           return /^end\s+repeat\b/.test(line);
+         case 'while':
+           return /^end\s+while\b/.test(line);
+         default:
+           return false;
+       }
+     }
+
+
+
   handleEnter() {
     const currentLine = this.input.value.trim();
 
@@ -270,32 +317,7 @@ const { initialCode = "", active = false } = Astro.props;
     this.updateCursorPosition();
   }
 
-  isBlockStart(line) {
-    if (/^if\b/.test(line)) {
-      this.blockType = 'if';
-      return true;
-    } else if (/^repeat\b/.test(line)) {
-      this.blockType = 'repeat';
-      return true;
-    } else if (/^while\b/.test(line)) {
-      this.blockType = 'while';
-      return true;
-    }
-    return false;
-  }
 
-  isBlockEnd(line) {
-    switch (this.blockType) {
-      case 'if':
-        return /^end\s+if\b/.test(line);
-      case 'repeat':
-        return /^end\s+repeat\b/.test(line);
-      case 'while':
-        return /^end\s+while\b/.test(line);
-      default:
-        return false;
-    }
-  }
 
     async runCode(code) {
 
