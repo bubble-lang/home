@@ -138,29 +138,6 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
-    handleEnter() {
-      const currentLine = this.input.value.trim();
-
-      if (this.isWaitingForInput) {
-        this.submitInput();
-      } else if (this.isInBlock || this.isBlockStart(currentLine)) {
-        this.isInBlock = true;
-        this.inputBuffer += this.input.value + '\n';
-        this.appendToTerminal('> ' + this.input.value);
-        this.input.value = '  '; // Add indentation
-      } else {
-        this.runCode(this.input.value);
-      }
-
-      if (this.isBlockEnd(currentLine)) {
-        this.isInBlock = false;
-        this.runCode(this.inputBuffer);
-        this.inputBuffer = '';
-        this.blockType = null;
-      }
-
-      this.updateCursorPosition();
-    }
 
     isBlockStart(line) {
       if (/^if\b/.test(line)) {
@@ -189,6 +166,33 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
+
+    handleEnter() {
+      const currentLine = this.input.value.trim();
+
+      if (this.isWaitingForInput) {
+        this.submitInput();
+      } else if (this.isInBlock || this.isBlockStart(currentLine)) {
+        this.isInBlock = true;
+        this.inputBuffer += this.input.value + '\n';
+        this.appendToTerminal('> ' + this.input.value);
+        this.input.value = '  '; // Add indentation
+      } else {
+        // For single-line inputs, append to terminal here
+        this.appendToTerminal('> ' + this.input.value);
+        this.runCode(this.input.value);
+      }
+
+      if (this.isBlockEnd(currentLine)) {
+        this.isInBlock = false;
+        this.runCode(this.inputBuffer);
+        this.inputBuffer = '';
+        this.blockType = null;
+      }
+
+      this.updateCursorPosition();
+    }
+
     async runCode(code) {
       code = code.trim();
       code = code.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
@@ -200,11 +204,6 @@ const { initialCode = "", active = false } = Astro.props;
           this.revealTerminal();
           this.isFirstRun = false;
         }
-
-        const codeLines = code.split('\n');
-        codeLines.forEach(line => {
-          this.appendToTerminal('> ' + line.trim());
-        });
 
         try {
           if ((code.startsWith("set ") || code.includes(" to ") || code.includes(" = ")) && code.includes("input")) {
@@ -244,6 +243,7 @@ const { initialCode = "", active = false } = Astro.props;
         this.clearInputAndResetCursor();
       }
     }
+
 
     appendToTerminal(text) {
       const newElement = document.createElement("div");
