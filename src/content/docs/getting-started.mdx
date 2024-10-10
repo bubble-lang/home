@@ -11,9 +11,7 @@ import Play from "../../components/Play.astro";
 
 <WASMINIT />
 
-<Play initialCode = {`say "hi"`}/>
 
-<Play initialCode = {`x = 1`}/>
 
 # Welcome to Bubble
 
@@ -30,23 +28,28 @@ say "Hello, World!"
 Run this code and you'll see "Hello, World!" printed to the console. Congratulations, you just wrote your first Bubble program!
 
 
+<Play initialCode = {`say "Hello, World!"`}/>
+
+
 ## Variables
 
 Variables are like places where you can save information. For example, you can save the value of a number to a variable. In bubble, we can use the `set` keyword.
 
 ```
 set x to 5
-set y to 3
 ```
+
 
 We can print the values of `x` and `y` using the say command
 
 ```
-set x to 5
-set y to 3
 say x
-say y
 ```
+
+
+<Play initialCode = {`set x to 5
+
+say x`}/>
 
 
 

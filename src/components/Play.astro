@@ -22,17 +22,17 @@ const { initialCode = "", active = false } = Astro.props;
         <div class="terminal font-mono text-lg"></div>
       </div>
       <div class="input-container w-full py-4 border-t" style="display: none;">
-        <div class="input-button-container flex w-full">
-          <div class="input-wrapper w-full">
-            <input
-              type="text"
-              class="input w-full px-4 py-2 rounded-l-xl border-4 border-r-0 border-blue-50 text-blue-700 focus:outline-none focus:ring-1 ring-inset focus:ring-blue-200 font-mono"
-              placeholder="Type here and press enter."
-            />
-            <span class="retro-cursor"></span>
-          </div>
+        <div class="input-button-container flex w-full items-center">
+       
+            <textarea
+              class="input w-full px-4 py-2 rounded-l-xl border-4 border-r-0 border-blue-50 text-blue-700 focus:outline-none focus:ring-1 ring-inset focus:ring-blue-200 font-mono overflow-hidden resize-none"
+              placeholder="Type here and press Enter to run."
+              rows="1"
+              style="height: auto; min-height: 2.5rem;"
+            ></textarea>
+         
           <button
-            class="run-button px-4 rounded-r-xl border-4 border-blue-50 bg-yellow-300 text-black hover:bg-yellow-400 focus:outline-none"
+            class="run-button self-end px-4 rounded-r-xl border-4 border-blue-50 bg-yellow-300 text-black hover:bg-yellow-400 focus:outline-none"
           >
             Run
           </button>
@@ -74,18 +74,18 @@ const { initialCode = "", active = false } = Astro.props;
       this.runButton = this.querySelector('.run-button');
       this.solutionToggle = this.querySelector('.solution-toggle');
       this.solutionContent = this.querySelector('.solution-content');
-      this.retroCursor = this.querySelector('.retro-cursor');
 
       document.addEventListener('wasm-environment-ready', () => this.initializeWASMInstance());
 
       this.input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
           this.handleEnter();
         }
+        this.autoResize();
       });
 
-      this.input.addEventListener("input", () => this.updateCursorPosition());
+      this.input.addEventListener("input", () => this.autoResize());
 
       this.runButton.addEventListener("click", () => this.handleRunButton());
 
@@ -96,6 +96,13 @@ const { initialCode = "", active = false } = Astro.props;
       if (this.active) {
         this.input.focus();
       }
+
+      this.autoResize();
+    }
+
+    autoResize() {
+      this.input.style.height = 'auto';
+      this.input.style.height = (this.input.scrollHeight) + 'px';
     }
 
     async initializeWASMInstance() {
@@ -111,7 +118,7 @@ const { initialCode = "", active = false } = Astro.props;
         if (this.active) {
           this.input.focus();
         }
-        this.updateCursorPosition();
+        this.autoResize();
 
         this.bubbleInterpreter.setOutputCallback((text) => {
           this.handleOutput(text);
@@ -128,29 +135,52 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
-    handleRunButton() {
-      if (this.isInBlock) {
+ 
+    appendToTerminal(text, isInput = false) {
+  const lines = text.split('\n');
+  lines.forEach((line) => {
+    if (line.trim() !== '' || !isInput) { // Only skip empty lines for input
+      const newElement = document.createElement("div");
+      newElement.textContent = isInput ? `> ${line}` : line;
+      if (isInput) {
+        newElement.style.color = 'blue';
+      }
+      this.terminal.appendChild(newElement);
+    }
+  });
+  this.terminalContainer.scrollTop = this.terminalContainer.scrollHeight;
+}
+
+    handleEnter() {
+      const currentInput = this.input.value.trim();
+
+      if (this.isWaitingForInput) {
+        this.submitInput();
+      } else if (this.isInBlock || this.isBlockStart(currentInput)) {
+        this.isInBlock = true;
         this.inputBuffer += this.input.value + '\n';
-        this.appendToTerminal('> ' + this.input.value);
-        this.input.value = '  '; // Add indentation
+        this.appendToTerminal(this.input.value, true);
+        this.input.value = '';
+        if (this.isBlockStart(currentInput)) {
+          this.blockType = this.getBlockType(currentInput);
+          this.input.value = '  '; // Add indentation for block content
+        }
       } else {
         this.runCode(this.input.value);
       }
+
+      if (this.isBlockEnd(currentInput)) {
+        this.isInBlock = false;
+        this.runCode(this.inputBuffer.trim()); // Trim the inputBuffer to remove trailing newline
+        this.inputBuffer = '';
+        this.blockType = null;
+      }
+
+      this.autoResize();
     }
 
-
     isBlockStart(line) {
-      if (/^if\b/.test(line)) {
-        this.blockType = 'if';
-        return true;
-      } else if (/^repeat\b/.test(line)) {
-        this.blockType = 'repeat';
-        return true;
-      } else if (/^while\b/.test(line)) {
-        this.blockType = 'while';
-        return true;
-      }
-      return false;
+      return /^(if|repeat|while)\b/.test(line);
     }
 
     isBlockEnd(line) {
@@ -166,97 +196,72 @@ const { initialCode = "", active = false } = Astro.props;
       }
     }
 
-
-    handleEnter() {
-    const currentLine = this.input.value.trim();
-
-    if (this.isWaitingForInput) {
-      this.submitInput();
-    } else if (this.isInBlock || this.isBlockStart(currentLine)) {
-      this.isInBlock = true;
-      this.inputBuffer += this.input.value + '\n';
-      this.appendToTerminal('> ' + this.input.value);
-      this.input.value = '  '; // Add indentation
-    } else {
-      // For single-line inputs, we no longer echo here
-      // The echo will be handled in runCode
-      this.runCode(this.input.value);
+    getBlockType(line) {
+      if (/^if\b/.test(line)) return 'if';
+      if (/^repeat\b/.test(line)) return 'repeat';
+      if (/^while\b/.test(line)) return 'while';
+      return null;
     }
 
-    if (this.isBlockEnd(currentLine)) {
-      this.isInBlock = false;
-      this.runCode(this.inputBuffer);
-      this.inputBuffer = '';
-      this.blockType = null;
+    handleRunButton() {
+      const code = this.isInBlock ? this.inputBuffer + this.input.value : this.input.value;
+      this.runCode(code.trim());
     }
 
-    this.updateCursorPosition();
-  }
+    async runCode(code) {
+      code = code.replace(/[""]/g, '"').replace(/['']/g, "'");
 
-  async runCode(code) {
-    code = code.trim();
-    code = code.replace(/[""]/g, '"').replace(/['']/g, "'");
+      if (!this.isREPLReady) {
+        this.appendToTerminal("REPL not loaded yet. Please wait...");
+      } else if (code !== "") {
+        this.appendToTerminal(code, true);
 
-    if (!this.isREPLReady) {
-      this.appendToTerminal("REPL not loaded yet. Please wait...");
-    } else if (code !== "") {
-      // Echo the input once
-      this.appendToTerminal(`> ${code}`);
+        if (this.isFirstRun) {
+          this.revealTerminal();
+          this.isFirstRun = false;
+        }
 
-      if (this.isFirstRun) {
-        this.revealTerminal();
-        this.isFirstRun = false;
-      }
-
-      try {
-        if ((code.startsWith("set ") || code.includes(" to ") || code.includes(" = ")) && code.includes("input")) {
-          let varName, inputPrompt;
-          if (code.includes(" = ")) {
-            [varName, inputPrompt] = code.split(" = ");
-          } else {
-            [varName, inputPrompt] = code.split(" to ");
-            varName = varName.replace("set ", "");
-          }
-          varName = varName.trim();
-          inputPrompt = inputPrompt.replace("input", "").trim().replace(/^"/, '').replace(/"$/, '');
-
-          this.clearInputAndResetCursor();
-          this.inputValue = await this.handleInput(inputPrompt);
-          const result = await this.bubbleInterpreter.runBubble(`set ${varName} to "${this.inputValue}"`);
-          if (result !== undefined && result !== null && result !== "") {
-            this.handleOutput(result);
-          }
-        } else {
-          const result = await this.bubbleInterpreter.runBubble(code);
-          if (result !== undefined && result !== null) {
-            if (typeof result === 'object') {
-              this.handleOutput(JSON.stringify(result));
+        try {
+          if ((code.startsWith("set ") || code.includes(" to ") || code.includes(" = ")) && code.includes("input")) {
+            let varName, inputPrompt;
+            if (code.includes(" = ")) {
+              [varName, inputPrompt] = code.split(" = ");
             } else {
-              this.handleOutput(result.toString());
+              [varName, inputPrompt] = code.split(" to ");
+              varName = varName.replace("set ", "");
+            }
+            varName = varName.trim();
+            inputPrompt = inputPrompt.replace("input", "").trim().replace(/^"/, '').replace(/"$/, '');
+
+            this.clearInputAndResetCursor();
+            this.inputValue = await this.handleInput(inputPrompt);
+            const result = await this.bubbleInterpreter.runBubble(`set ${varName} to "${this.inputValue}"`);
+            if (result !== undefined && result !== null && result !== "") {
+              this.handleOutput(result);
+            }
+          } else {
+            const result = await this.bubbleInterpreter.runBubble(code);
+            if (result !== undefined && result !== null) {
+              if (typeof result === 'object') {
+                this.handleOutput(JSON.stringify(result));
+              } else {
+                this.handleOutput(result.toString());
+              }
             }
           }
+        } catch (error) {
+          console.error("Error running code:", error);
+          this.handleOutput("Error: " + error.message);
         }
-      } catch (error) {
-        console.error("Error running code:", error);
-        this.handleOutput("Error: " + error.message);
+      }
+
+      if (!this.isWaitingForInput && !this.isInBlock) {
+        this.clearInputAndResetCursor();
       }
     }
 
-    if (!this.isInBlock && !this.isWaitingForInput) {
-      this.clearInputAndResetCursor();
-    }
-  }
+   
 
-
-    appendToTerminal(text) {
-      const newElement = document.createElement("div");
-      newElement.textContent = text;
-      if (text.startsWith('>')) {
-        newElement.style.color = 'blue';
-      }
-      this.terminal.appendChild(newElement);
-      this.terminalContainer.scrollTop = this.terminalContainer.scrollHeight;
-    }
 
     handleOutput(text) {
       text = text.trim();
@@ -264,7 +269,6 @@ const { initialCode = "", active = false } = Astro.props;
         this.appendToTerminal(text);
       }
     }
-
 
     handleInput(message) {
       return new Promise((resolve) => {
@@ -280,25 +284,25 @@ const { initialCode = "", active = false } = Astro.props;
       });
     }
 
-
     submitInput() {
-          const userInput = this.input.value;
-          this.appendToTerminal(`> ${userInput}`);
-          this.inputValue = userInput;
-          this.input.value = "";
-          this.input.placeholder = "Type your code here and press Enter to run";
-          this.runButton.textContent = "Run";
-          this.isWaitingForInput = false;
-          if (this.inputResolve) {
-            this.inputResolve(userInput);
-            this.inputResolve = null;
-          }
-        }
+      const userInput = this.input.value;
+      this.appendToTerminal(userInput, true);
+      this.inputValue = userInput;
+      this.input.value = "";
+      this.input.placeholder = "Type your code here and press Enter to run";
+      this.runButton.textContent = "Run";
+      this.isWaitingForInput = false;
+      if (this.inputResolve) {
+        this.inputResolve(userInput);
+        this.inputResolve = null;
+      }
+      this.autoResize();
+    }
 
     clearInputAndResetCursor() {
       this.input.value = '';
-      this.updateCursorPosition();
       this.input.focus();
+      this.autoResize();
     }
 
     revealTerminal() {
@@ -316,28 +320,6 @@ const { initialCode = "", active = false } = Astro.props;
         this.solutionContent.style.display = "none";
         this.solutionToggle.textContent = "Show Solution";
       }
-    }
-
-    updateCursorPosition() {
-      const inputRect = this.input.getBoundingClientRect();
-      const cursorPosition = this.input.selectionStart;
-      const textWidth = this.getTextWidth(this.input.value.substring(0, cursorPosition));
-      const maxWidth = inputRect.width - 40;
-      const clampedLeft = Math.min(textWidth, maxWidth);
-      this.retroCursor.style.left = `${clampedLeft + 22}px`;
-
-      if (textWidth > maxWidth) {
-        this.input.scrollLeft = textWidth - maxWidth;
-      } else {
-        this.input.scrollLeft = 0;
-      }
-    }
-
-    getTextWidth(text) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      context.font = getComputedStyle(this.input).font;
-      return context.measureText(text).width;
     }
 
     showError(message) {

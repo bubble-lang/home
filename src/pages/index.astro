@@ -6,8 +6,15 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import Main from '../components/Main.astro';
 import Playground from '../components/Playground.astro';
 
+import WASMINIT from "../components/WASMINIT.astro";
+import Play from "../components/Play.astro";
+
+
 
 ---
+
+<WASMINIT />
+
 
 <!doctype html>
 <html lang="en">
@@ -27,7 +34,7 @@ import Playground from '../components/Playground.astro';
 			A friendly new programming language for beginners.		</p>
 
 
-		<Playground initialCode='say "hello world!"' active={true} />
+		<Play initialCode='say "hello world!"' active={true} />
 
 
 
