@@ -277,82 +277,84 @@ const { initialCode = "", active = false } = Astro.props;
 
 
   handleEnter() {
-    const currentLine = this.input.value.trim();
+  const currentLine = this.input.value.trim();
 
-    if (this.isWaitingForInput) {
-      this.submitInput();
-    } else if (this.isInBlock || this.isBlockStart(currentLine)) {
-      this.isInBlock = true;
-      this.inputBuffer += this.input.value + '\n';
-      this.appendToTerminal('> ' + this.input.value);
-      this.input.value = '  '; // Add indentation
-    } else {
-      // For single-line inputs, append to terminal here
-      this.appendToTerminal('> ' + this.input.value);
-      this.runCode(this.input.value);
-    }
-
-    if (this.isBlockEnd(currentLine)) {
-      this.isInBlock = false;
-      this.runCode(this.inputBuffer);
-      this.inputBuffer = '';
-      this.blockType = null;
-    }
-
-    this.updateCursorPosition();
+  if (this.isWaitingForInput) {
+    this.submitInput();
+  } else if (this.isInBlock || this.isBlockStart(currentLine)) {
+    this.isInBlock = true;
+    this.inputBuffer += this.input.value + '\n';
+    this.appendToTerminal('> ' + this.input.value);
+    this.input.value = '  '; // Add indentation
+  } else {
+    // For single-line inputs, we no longer echo here
+    // The echo will be handled in runCode
+    this.runCode(this.input.value);
   }
 
-  async runCode(code) {
-    code = code.trim();
-    code = code.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+  if (this.isBlockEnd(currentLine)) {
+    this.isInBlock = false;
+    this.runCode(this.inputBuffer);
+    this.inputBuffer = '';
+    this.blockType = null;
+  }
 
-    if (!this.isREPLReady) {
-      this.appendToTerminal("REPL not loaded yet. Please wait...");
-    } else if (code !== "") {
-      if (this.isFirstRun) {
-        this.revealTerminal();
-        this.isFirstRun = false;
-      }
+  this.updateCursorPosition();
+}
 
-      try {
-        if ((code.startsWith("set ") || code.includes(" to ") || code.includes(" = ")) && code.includes("input")) {
-          let varName, inputPrompt;
-          if (code.includes(" = ")) {
-            [varName, inputPrompt] = code.split(" = ");
-          } else {
-            [varName, inputPrompt] = code.split(" to ");
-            varName = varName.replace("set ", "");
-          }
-          varName = varName.trim();
-          inputPrompt = inputPrompt.replace("input", "").trim().replace(/^"/, '').replace(/"$/, '');
+async runCode(code) {
+  code = code.trim();
+  code = code.replace(/[""]/g, '"').replace(/['']/g, "'");
 
-          this.clearInputAndResetCursor();
-          this.inputValue = await this.handleInput(inputPrompt);
-          const result = await this.bubbleInterpreter.runBubble(`set ${varName} to "${this.inputValue}"`);
-          if (result !== undefined && result !== null && result !== "") {
-            this.handleOutput(result);
-          }
+  if (!this.isREPLReady) {
+    this.appendToTerminal("REPL not loaded yet. Please wait...");
+  } else if (code !== "") {
+    // Echo the input once
+    this.appendToTerminal(`> ${code}`);
+
+    if (this.isFirstRun) {
+      this.revealTerminal();
+      this.isFirstRun = false;
+    }
+
+    try {
+      if ((code.startsWith("set ") || code.includes(" to ") || code.includes(" = ")) && code.includes("input")) {
+        let varName, inputPrompt;
+        if (code.includes(" = ")) {
+          [varName, inputPrompt] = code.split(" = ");
         } else {
-          const result = await this.bubbleInterpreter.runBubble(code);
-          if (result !== undefined && result !== null) {
-            if (typeof result === 'object') {
-              this.handleOutput(JSON.stringify(result));
-            } else {
-              this.handleOutput(result.toString());
-            }
+          [varName, inputPrompt] = code.split(" to ");
+          varName = varName.replace("set ", "");
+        }
+        varName = varName.trim();
+        inputPrompt = inputPrompt.replace("input", "").trim().replace(/^"/, '').replace(/"$/, '');
+
+        this.clearInputAndResetCursor();
+        this.inputValue = await this.handleInput(inputPrompt);
+        const result = await this.bubbleInterpreter.runBubble(`set ${varName} to "${this.inputValue}"`);
+        if (result !== undefined && result !== null && result !== "") {
+          this.handleOutput(result);
+        }
+      } else {
+        const result = await this.bubbleInterpreter.runBubble(code);
+        if (result !== undefined && result !== null) {
+          if (typeof result === 'object') {
+            this.handleOutput(JSON.stringify(result));
+          } else {
+            this.handleOutput(result.toString());
           }
         }
-      } catch (error) {
-        console.error("Error running code:", error);
-        this.handleOutput("Error: " + error.message);
       }
-    }
-
-    if (!this.isInBlock && !this.isWaitingForInput) {
-      this.clearInputAndResetCursor();
+    } catch (error) {
+      console.error("Error running code:", error);
+      this.handleOutput("Error: " + error.message);
     }
   }
 
+  if (!this.isInBlock && !this.isWaitingForInput) {
+    this.clearInputAndResetCursor();
+  }
+}
 
 
 
